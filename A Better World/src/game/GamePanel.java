@@ -145,6 +145,7 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
+    // GamePanel update
     public void update() {
         // Update the game
         if(gameStateManager != null) {
@@ -152,6 +153,7 @@ public class GamePanel extends JPanel implements Runnable {
         }
     }
 
+    // GamePanel render
     public void render() {
         // Render the game
         if(graphics2D != null) {
