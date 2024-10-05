@@ -86,7 +86,7 @@ public abstract class Entity {
         else {
             if(isMoving) {
                 ani.setFrames(sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(currentDirection));
-                ani.setDelay(20);
+                ani.setDelay(12);
             }
 
             isMoving = false;
