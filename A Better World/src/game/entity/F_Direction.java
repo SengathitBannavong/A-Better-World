@@ -1,10 +1,9 @@
 package game.entity;
 
-public enum F_Movement {
+public enum F_Direction {
     UP,
     DOWN,
     LEFT,
     RIGHT,
-    ATTACK,
     SIZE
 }

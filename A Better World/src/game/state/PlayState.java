@@ -22,7 +22,7 @@ public class PlayState extends GameState {
         super(gsm);
 
         font = new Font("font/font.png", 10, 10);
-        player = new Player(new Vector2D(300, 300), 64);
+        player = new Player(new Vector2D(300, 300), GamePanel.Tile_Size * 4);
         tileManager = new TileManager("maps/world_map.txt");
     }
 
@@ -41,7 +41,6 @@ public class PlayState extends GameState {
         tileManager.render(g);
         Sprite.drawArray(g, font, GamePanel.oldFrameCount + " FPS", new Vector2D(GamePanel.width - 130, 0), 32, 32, 16, 0);
         player.render(g);
-
     }
 
 }

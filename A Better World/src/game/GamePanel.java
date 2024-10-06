@@ -12,9 +12,11 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 public class GamePanel extends JPanel implements Runnable {
-
+    // GamePanel
     public static int width;
     public static int height;
+
+    public static final int Tile_Size = 32;
 
     // Frames
     public static int oldFrameCount;
@@ -103,8 +105,8 @@ public class GamePanel extends JPanel implements Runnable {
             int updateCount = 0;
             // Update the game
             while(deltaUpdate >= 1 && (updateCount < MUBR)) {
-                update();
                 input(mouse, key);
+                update();
                 deltaUpdate--;
                 updateCount++;
             }
