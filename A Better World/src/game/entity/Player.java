@@ -19,8 +19,8 @@ public class Player extends Entity{
         sprite[F_List_Animation_Sprite.Idle.ordinal()] = new Sprite("player/Player_idle_64_64_sprite.png", 64, 64);
         sprite[F_List_Animation_Sprite.Walking.ordinal()] = new Sprite("player/Player_walking_64_64_sprite.png", 64, 64);
         sprite[F_List_Animation_Sprite.Attack.ordinal()] = new Sprite("player/Player_attack_64_64_sprite.png", 64, 64);
-        sprite[F_List_Animation_Sprite.Dead.ordinal()] = new Sprite("player/Player_attack_64_64_sprite.png", 64, 64);
-        sprite[F_List_Animation_Sprite.Hurt.ordinal()] = new Sprite("player/Player_attack_64_64_sprite.png", 64, 64);
+        sprite[F_List_Animation_Sprite.Dead.ordinal()] = new Sprite("player/Player_death_64_64_sprite.png", 64, 64);
+        sprite[F_List_Animation_Sprite.Hurt.ordinal()] = new Sprite("player/Player_hurt_64_64_sprite.png", 64, 64);
         return sprite;
     }
 
