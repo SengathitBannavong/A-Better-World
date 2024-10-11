@@ -54,6 +54,7 @@ public class Animation {
             currentFrame++;
             count = 0;
         }
+
         if(currentFrame == numFrames) {
             currentFrame = 0;
             timesPlayed++;

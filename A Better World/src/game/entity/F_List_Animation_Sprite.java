@@ -6,5 +6,6 @@ public enum F_List_Animation_Sprite {
     Attack,
     Dead,
     Hurt,
+    Dash,
     SIZE
 }

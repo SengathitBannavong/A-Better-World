@@ -83,11 +83,10 @@ public class GamePanel extends JPanel implements Runnable {
         double lastUpdateTime = System.nanoTime();
         double lastRenderTime = System.nanoTime();
 
-        final double TARGET_FPS = 64.0;
+        final double TARGET_FPS = 60.0;
         // 16.666666666666668 ms
-        final double TTBR = 1_000_000_000 / TARGET_FPS; // Total time before render
-
-        System.out.println("TBU: " + TBU + " TTBR: " + TTBR);
+        final double TBR = 1_000_000_000 / TARGET_FPS; // Total time before render
+        System.out.println("TBU: " + TBU + " TBR: " + TBR);
 
         int frameCount = 0;
         int lastSecondTime = (int) (lastUpdateTime / 1_000_000_000);
@@ -99,7 +98,7 @@ public class GamePanel extends JPanel implements Runnable {
         while (running) {
             double now = System.nanoTime();
             deltaUpdate += (now - lastUpdateTime) / TBU;
-            deltaRender += (now - lastRenderTime) / TTBR;
+            deltaRender += (now - lastRenderTime) / TBR;
             lastUpdateTime = now;
 
             int updateCount = 0;
@@ -112,7 +111,7 @@ public class GamePanel extends JPanel implements Runnable {
             }
 
             // Render the game
-            if (deltaRender >= 1) {
+            while (deltaRender >= 1) {
                 // Render
                 input(mouse, key);
                 render();
@@ -135,13 +134,8 @@ public class GamePanel extends JPanel implements Runnable {
 
 
             // Yield until it has been at least the target time between renders. This saves the CPU from hogging.
-            while(now - lastRenderTime < TTBR && now - lastUpdateTime < TBU) {
-                Thread.yield();
-                try {
-                    Thread.sleep(1);
-                } catch (Exception e) {
-                    System.out.println("Error: yielding thread");
-                }
+            while(now - lastRenderTime < TBR && now - lastUpdateTime < TBU) {
+                Thread.onSpinWait();
                 now = System.nanoTime();
             }
         }

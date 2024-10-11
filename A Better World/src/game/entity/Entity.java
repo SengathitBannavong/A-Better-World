@@ -31,7 +31,7 @@ public abstract class Entity {
     // Speed
     protected float dx;
     protected float dy;
-    protected int maxSpeed = 10;
+    protected int maxSpeed = 20;
     protected float acc = 3f; // Acceleration
     protected float deacc = 3f; // Deceleration
 

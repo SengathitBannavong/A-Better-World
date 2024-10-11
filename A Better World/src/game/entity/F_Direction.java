@@ -5,5 +5,6 @@ public enum F_Direction {
     DOWN,
     LEFT,
     RIGHT,
+    DASH,
     SIZE
 }

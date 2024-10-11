@@ -14,6 +14,13 @@ public class Player extends Entity{
 
     private static Camera camera;
 
+    // Movement
+    private boolean dashPrssed = false;
+    private final float dashSpeed = 1.5f;
+    private boolean isDash = false;
+    private boolean stillDash = false;
+    private final float DefaultSpeed = 3f;
+
     private Sprite[] setDefaultSpite(){
         Sprite[] sprite = new Sprite[F_List_Animation_Sprite.SIZE.ordinal()];
         sprite[F_List_Animation_Sprite.Idle.ordinal()] = new Sprite("player/Player_idle_64_64_sprite.png", 64, 64);
@@ -21,6 +28,7 @@ public class Player extends Entity{
         sprite[F_List_Animation_Sprite.Attack.ordinal()] = new Sprite("player/Player_attack_64_64_sprite.png", 64, 64);
         sprite[F_List_Animation_Sprite.Dead.ordinal()] = new Sprite("player/Player_death_64_64_sprite.png", 64, 64);
         sprite[F_List_Animation_Sprite.Hurt.ordinal()] = new Sprite("player/Player_hurt_64_64_sprite.png", 64, 64);
+        sprite[F_List_Animation_Sprite.Dash.ordinal()] = new Sprite("player/Player_dash_64_64_sprite.png", 64, 64);
         return sprite;
     }
 
@@ -32,11 +40,18 @@ public class Player extends Entity{
     }
 
     public void update(){
+
         movement();
-        super.update();
         Vector2D set = new Vector2D(dx, dy);
         set = set.normalize().multiply(acc);
         origin = origin.add(set);
+        if(stillDash||(isDash && !dashPrssed && checkmovent())){
+            setDashSpeed();
+            animation_dash();
+            ani.update();
+        }else{
+            super.update();
+        }
         camera.setPlayerPosition(origin);
         camera.update();
     }
@@ -50,95 +65,132 @@ public class Player extends Entity{
     }
 
     public void movement(){
+        // Dash case
+        if(stillDash){
+            if(currentDirection == F_Direction.UP){
+                acc_moveup();
+            }
+            if(currentDirection == F_Direction.DOWN){
+                acc_movedown();
+            }
+            if(currentDirection == F_Direction.LEFT){
+                acc_moveleft();
+            }
+            if(currentDirection == F_Direction.RIGHT){
+                acc_moveright();
+            }
+            return;
+        }
+        // Attack case
         if(statueAnimate == F_Statue_Animate.Attack){
             if(!movement_dir[F_Direction.UP.ordinal()]) {
-                if(dy < 0){
-                    dy += deacc;
-                    if(dy > 0){
-                        dy = 0;
-                    }
-                }
+                deacc_moveup();
             }
             if(!movement_dir[F_Direction.DOWN.ordinal()]) {
-                if(dy > 0){
-                    dy -= deacc;
-                    if(dy < 0){
-                        dy = 0;
-                    }
-                }
+                deacc_movedown();
             }
             if(!movement_dir[F_Direction.LEFT.ordinal()]) {
-                if(dx < 0){
-                    dx += deacc;
-                    if(dx > 0){
-                        dx = 0;
-                    }
-                }
+                deacc_moveleft();
             }
             if(!movement_dir[F_Direction.RIGHT.ordinal()]) {
-                if(dx > 0){
-                    dx -= deacc;
-                    if(dx < 0){
-                        dx = 0;
-                    }
-                }
+                deacc_moveright();
             }
             return;
         }
 
+        // Basic Movement case
         if(movement_dir[F_Direction.UP.ordinal()]){
-            dy -= acc;
-            if(dy < -maxSpeed){
-                dy = -maxSpeed;
-            }
+            acc_moveup();
         }else{
-            if(dy < 0){
-                dy += deacc;
-                if(dy > 0){
-                    dy = 0;
-                }
-            }
+            deacc_moveup();
         }
 
         if(movement_dir[F_Direction.DOWN.ordinal()]) {
-            dy += acc;
-            if (dy > maxSpeed) {
-                dy = maxSpeed;
-            }
+            acc_movedown();
         }else{
-            if(dy > 0){
-                dy -= deacc;
-                if(dy < 0){
-                    dy = 0;
-                }
-            }
+            deacc_movedown();
         }
 
         if(movement_dir[F_Direction.LEFT.ordinal()]){
-            dx -= acc;
-            if(dx < -maxSpeed){
-                dx = -maxSpeed;
-            }
+            acc_moveleft();
         }else{
-            if(dx < 0){
-                dx += deacc;
-                if(dx > 0){
-                    dx = 0;
-                }
-            }
+            deacc_moveleft();
         }
 
         if(movement_dir[F_Direction.RIGHT.ordinal()]) {
-            dx += acc;
-            if (dx > maxSpeed) {
-                dx = maxSpeed;
-            }
+            acc_moveright();
         }else{
+            deacc_moveright();
+        }
+
+    }
+
+    private void acc_moveup(){
+        dy -= acc;
+        if(dy < -maxSpeed){
+            dy = -maxSpeed;
+        }
+    }
+    private void acc_movedown(){
+        dy += acc;
+        if (dy > maxSpeed) {
+            dy = maxSpeed;
+        }
+    }
+    private void acc_moveleft(){
+        dx -= acc;
+        if(dx < -maxSpeed){
+            dx = -maxSpeed;
+        }
+    }
+    private void acc_moveright(){
+        dx += acc;
+        if (dx > maxSpeed) {
+            dx = maxSpeed;
+        }
+    }
+
+    private void deacc_moveup(){
+        if(dy < 0){
+            dy += deacc;
+            if(dy > 0){
+                dy = 0;
+            }
+        }
+    }
+    private void deacc_movedown(){
+        if(dy > 0){
+            dy -= deacc;
+            if(dy < 0){
+                dy = 0;
+            }
+        }
+    }
+    private void deacc_moveleft(){
+        if(dx < 0){
+            dx += deacc;
             if(dx > 0){
-                dx -= deacc;
-                if(dx < 0){
-                    dx = 0;
-                }
+                dx = 0;
+            }
+        }
+    }
+    private void deacc_moveright(){
+        if(dx > 0){
+            dx -= deacc;
+            if(dx < 0){
+                dx = 0;
+            }
+        }
+    }
+
+    public void setDashSpeed(){
+        if(!dashPrssed && !stillDash){
+                System.out.println("acc add: "+acc);
+               acc += dashSpeed;
+        }else{
+            if(ani.getFrame() == 4){
+                acc -= dashSpeed;
+                System.out.println("acc sub: "+acc);
             }
         }
     }
@@ -152,7 +204,9 @@ public class Player extends Entity{
         }
 
         if(key.down.down){
-            movement_dir[F_Direction.DOWN.ordinal()] = true;
+            if(!key.up.down) {
+                movement_dir[F_Direction.DOWN.ordinal()] = true;
+            }
         }else{
             movement_dir[F_Direction.DOWN.ordinal()] = false;
         }
@@ -164,9 +218,22 @@ public class Player extends Entity{
         }
 
         if(key.right.down) {
-            movement_dir[F_Direction.RIGHT.ordinal()] = true;
+            if(!key.left.down) {
+                movement_dir[F_Direction.RIGHT.ordinal()] = true;
+            }
         }else{
             movement_dir[F_Direction.RIGHT.ordinal()] = false;
+        }
+
+        if(key.dash.down){
+            isDash = true;
+            if(!dashPrssed) {
+                movement_dir[F_Direction.DASH.ordinal()] = true;
+            }
+        }else{
+            isDash = false;
+            movement_dir[F_Direction.DASH.ordinal()] = false;
+            setDashPrssed(false);
         }
 
         if(mouse.getButtom() == 1){
@@ -185,5 +252,41 @@ public class Player extends Entity{
 
     public static Camera getCamera() {
         return camera;
+    }
+
+    public boolean isDashPrssed() {
+        return dashPrssed;
+    }
+
+    private boolean checkmovent(){
+        for(int i = F_Direction.UP.ordinal(); i < F_Direction.DASH.ordinal(); i++){
+            if(movement_dir[i]){
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    public void setDashPrssed(boolean dashPrssed) {
+        this.dashPrssed = dashPrssed;
+    }
+
+    public void animation_dash(){
+        if(!dashPrssed){
+            if(!stillDash){
+                setAnimation(currentDirection, sprite[F_List_Animation_Sprite.Dash.ordinal()].getSpriteArray(currentDirection.ordinal()), 6);
+                stillDash = true;
+            }
+
+            if(ani.getFrame() == 4){
+                System.out.println("Dash done");
+                stillDash = false;
+                statueAnimate = F_Statue_Animate.BasicMoveMent;
+                ani.setFrames(sprite[F_List_Animation_Sprite.Walking.ordinal()].getSpriteArray(currentDirection.ordinal()));
+                ani.setDelay(5);
+                setDashPrssed(true);
+            }
+        }
     }
 }
