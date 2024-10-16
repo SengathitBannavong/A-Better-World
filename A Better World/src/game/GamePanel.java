@@ -17,6 +17,7 @@ public class GamePanel extends JPanel implements Runnable {
     public static int height;
 
     public static final int Tile_Size = 32;
+    public static final int Scale = 4;
 
     // Frames
     public static int oldFrameCount;
@@ -94,6 +95,8 @@ public class GamePanel extends JPanel implements Runnable {
 
         double deltaUpdate = 0;
         double deltaRender = 0;
+        boolean tick_state = false;
+        int tickcount = 0;
 
         while (running) {
             double now = System.nanoTime();
@@ -105,11 +108,15 @@ public class GamePanel extends JPanel implements Runnable {
             // Update the game
             while(deltaUpdate >= 1 && (updateCount < MUBR)) {
                 input(mouse, key);
+                if(!tick_state && key.escape.down){
+                    tick_state = true;
+                    Debug.debugging = !Debug.debugging;
+                }
                 update();
                 deltaUpdate--;
                 updateCount++;
             }
-
+            tickcount++;
             // Render the game
             while (deltaRender >= 1) {
                 // Render
@@ -120,7 +127,10 @@ public class GamePanel extends JPanel implements Runnable {
                 lastRenderTime = now;
                 frameCount++;
             }
-
+            if(tickcount > 25){
+                tick_state = false;
+                tickcount = 0;
+            }
             // Update the frames we got
             int thisSecond = (int) (lastUpdateTime / 1_000_000_000);
             if (thisSecond > lastSecondTime) {

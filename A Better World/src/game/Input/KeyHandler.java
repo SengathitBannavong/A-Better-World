@@ -12,7 +12,7 @@ public class KeyHandler implements KeyListener {
     public static List<Key> keys = new ArrayList<Key>();
 
     public static class Key{
-        public int presses, absorbs;
+        public int presses = 0, absorbs = 3;
         public boolean down, clicked;
 
         public Key(){
@@ -31,9 +31,9 @@ public class KeyHandler implements KeyListener {
         public void tick(){
             if(absorbs < presses){
                 absorbs++;
-                clicked = true;
+                clicked = down;
             }else{
-                clicked = false;
+                clicked = down;
             }
         }
     }
@@ -64,14 +64,17 @@ public class KeyHandler implements KeyListener {
     }
 
     public void toggle(KeyEvent e, boolean pressed){
-        if(e.getKeyCode() == KeyEvent.VK_W) up.toggle(pressed);
-        if(e.getKeyCode() == KeyEvent.VK_S) down.toggle(pressed);
-        if(e.getKeyCode() == KeyEvent.VK_A) left.toggle(pressed);
-        if(e.getKeyCode() == KeyEvent.VK_D) right.toggle(pressed);
-        if(e.getKeyCode() == KeyEvent.VK_E) menu.toggle(pressed);
-        if(e.getKeyCode() == KeyEvent.VK_ENTER) enter.toggle(pressed);
-        if(e.getKeyCode() == KeyEvent.VK_ESCAPE) escape.toggle(pressed);
-        if(e.getKeyCode() == KeyEvent.VK_SHIFT) dash.toggle(pressed);
+        // Toggle keys based on key events
+        switch (e.getKeyCode()) {
+            case KeyEvent.VK_W -> up.toggle(pressed);
+            case KeyEvent.VK_S -> down.toggle(pressed);
+            case KeyEvent.VK_A -> left.toggle(pressed);
+            case KeyEvent.VK_D -> right.toggle(pressed);
+            case KeyEvent.VK_E -> menu.toggle(pressed);
+            case KeyEvent.VK_ENTER -> enter.toggle(pressed);
+            case KeyEvent.VK_ESCAPE -> escape.toggle(pressed);
+            case KeyEvent.VK_SHIFT -> dash.toggle(pressed);
+        }
     }
 
     @Override

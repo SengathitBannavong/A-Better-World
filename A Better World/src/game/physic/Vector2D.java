@@ -12,10 +12,6 @@ public class Vector2D {
         y = 0;
     }
 
-    public Vector2D(Vector2D pos) {
-        new Vector2D(pos.x, pos.y);
-    }
-
     public Vector2D(float x, float y) {
         this.x = x;
         this.y = y;
@@ -99,6 +95,13 @@ public class Vector2D {
 
     @Override
     public String toString() {
-        return STR."Vector2D{x=\{x}, y=\{y}}";
+        return "Vector2D{" +
+                "x=" + x +
+                ", y=" + y +
+                '}';
+    }
+
+    public Vector2D abs() {
+        return new Vector2D(Math.abs(x), Math.abs(y));
     }
 }

@@ -22,6 +22,7 @@ public abstract class Entity {
     protected Sprite[] sprite;
     // Size
     protected int size;
+    protected int sizeSprite;
     // Movement Direction
     protected boolean[] movement_dir;
     // Abilities
@@ -35,9 +36,10 @@ public abstract class Entity {
     protected float acc = 3f; // Acceleration
     protected float deacc = 3f; // Deceleration
 
-    public Entity(Vector2D origin, int size) {
+    public Entity(Vector2D origin, int size,int sizeSprite) {
         this.origin = origin;
         this.size = size;
+        this.sizeSprite = sizeSprite;
 
         movement_dir = new boolean[F_Direction.SIZE.ordinal()];
         ani = new Animation();
@@ -171,4 +173,8 @@ public abstract class Entity {
     }
 
     public abstract void render(Graphics2D g);
+
+    public int getSize() {
+        return size;
+    }
 }

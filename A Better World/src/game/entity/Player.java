@@ -1,13 +1,16 @@
 package game.entity;
 
+import game.Debug;
 import game.GamePanel;
 import game.Input.KeyHandler;
 import game.Input.MouseHandler;
 import game.graphic.Camera;
 import game.graphic.Sprite;
+import game.physic.AABB;
 import game.physic.Vector2D;
+import game.state.PlayState;
 
-import java.awt.Graphics2D;
+import java.awt.*;
 import java.util.Arrays;
 
 public class Player extends Entity{
@@ -21,6 +24,9 @@ public class Player extends Entity{
     private boolean stillDash = false;
     private final float DefaultSpeed = 3f;
 
+    // Hit box
+    AABB hitBounds;
+
     private Sprite[] setDefaultSpite(){
         Sprite[] sprite = new Sprite[F_List_Animation_Sprite.SIZE.ordinal()];
         sprite[F_List_Animation_Sprite.Idle.ordinal()] = new Sprite("player/Player_idle_64_64_sprite.png", 64, 64);
@@ -32,28 +38,52 @@ public class Player extends Entity{
         return sprite;
     }
 
-    public Player(Vector2D origin, int size) {
-        super(origin, size);
+    public Player(Vector2D origin, int sizeRender) {
+        super(origin, GamePanel.Tile_Size, sizeRender);
         this.sprite = setDefaultSpite();
         setAnimation(F_Direction.RIGHT, sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(F_Direction.RIGHT.ordinal()), 10);
         camera = new Camera(origin, ((float) GamePanel.width /2),((float) GamePanel.height /2), GamePanel.width, GamePanel.height);
+        hitBounds = new AABB(origin, GamePanel.Tile_Size, GamePanel.Tile_Size);
     }
 
     public void update(){
+        setupDirectionMovement();
 
+        if(is_dash_update()){// Update the animation dash movement
+            dash_update();
+        }else{
+            // Update the animation basic movement
+            super.update();
+        }
+
+        camera_update();
+        hitbounds_update();
+    }
+
+    public void camera_update(){
+        camera.setPlayerPosition(origin);
+        camera.update();
+    }
+
+    public void setupDirectionMovement(){
         movement();
         Vector2D set = new Vector2D(dx, dy);
         set = set.normalize().multiply(acc);
         origin = origin.add(set);
-        if(stillDash||(isDash && !dashPrssed && checkmovent())){
-            setDashSpeed();
-            animation_dash();
-            ani.update();
-        }else{
-            super.update();
-        }
-        camera.setPlayerPosition(origin);
-        camera.update();
+    }
+
+    public boolean is_dash_update(){
+        return (stillDash||(isDash && !dashPrssed && checkmovent()));
+    }
+
+    public void dash_update(){
+        setDashSpeed();
+        animation_dash();
+        ani.update();
+    }
+
+    public void hitbounds_update(){
+        hitBounds.setBox(origin, size, size);
     }
 
     @Override
@@ -61,7 +91,16 @@ public class Player extends Entity{
         int renderX = (int)(origin.x - Camera.getWorldX());
         int renderY = (int)(origin.y - Camera.getWorldY());
 
-        g.drawImage(ani.getImage(),renderX, renderY, size, size, null);
+        g.drawImage(ani.getImage(),renderX, renderY, sizeSprite, sizeSprite, null);
+        if(Debug.debugging) {
+            renderDebug(g, renderX, renderY);
+        }
+    }
+
+    public void renderDebug(Graphics2D g, int renderX, int renderY){
+        g.setColor(Color.YELLOW);
+        g.drawRect(renderX, renderY, sizeSprite, sizeSprite);
+        hitBounds.render(g);
     }
 
     public void movement(){
@@ -176,6 +215,7 @@ public class Player extends Entity{
     }
     private void deacc_moveright(){
         if(dx > 0){
+
             dx -= deacc;
             if(dx < 0){
                 dx = 0;
@@ -236,7 +276,7 @@ public class Player extends Entity{
             setDashPrssed(false);
         }
 
-        if(mouse.getButtom() == 1){
+        if(MouseHandler.getButtom() == 1){
             statueAnimate = F_Statue_Animate.Attack;
             setFlase();
         }else{
