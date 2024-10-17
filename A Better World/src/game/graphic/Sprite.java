@@ -3,7 +3,7 @@ package game.graphic;
 import game.physic.Vector2D;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 public class Sprite {
@@ -75,7 +75,7 @@ public class Sprite {
                 spriteArray[y][x] = getSprite(x, y);
             }
         }
-        System.out.println(STR."Sprite array loaded successfully by \{source}");
+        System.out.println("Sprite array loaded successfully by " + source);
     }
 
     public BufferedImage getSpriteSheet() {

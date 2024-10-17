@@ -42,7 +42,7 @@ public class Player extends Entity{
         super(origin, GamePanel.Tile_Size, sizeRender);
         this.sprite = setDefaultSpite();
         setAnimation(F_Direction.RIGHT, sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(F_Direction.RIGHT.ordinal()), 10);
-        camera = new Camera(origin, ((float) GamePanel.width /2),((float) GamePanel.height /2), GamePanel.width, GamePanel.height);
+        camera = new Camera(origin, ((float) GamePanel.width /2) - ((float) sizeSprite /2),((float) GamePanel.height /2) - ((float) sizeSprite /2), GamePanel.width, GamePanel.height);
         hitBounds = new AABB(origin, GamePanel.Tile_Size, GamePanel.Tile_Size);
     }
 

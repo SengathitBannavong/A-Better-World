@@ -37,7 +37,6 @@ public class GamePanel extends JPanel implements Runnable {
     // GameStateManager
     private GameStateManager gameStateManager;
 
-
     public GamePanel(int width, int height) {
         GamePanel.width = width;
         GamePanel.height = height;
