@@ -14,8 +14,8 @@ public class Map {
    protected List <Layer> layer;
    private int count_tileSet = 0;
    private int count_layer = 0;
-   private int width;
-   private int height;
+   private static int width;
+   private static int height;
 
    public Map() {
        tileSet = new ArrayList<>();
@@ -46,12 +46,11 @@ public class Map {
     }
 
     public void drawMap(Graphics2D g, Camera cam){
-        int tileSize = GamePanel.Tile_Size;
+        int tileSize = (GamePanel.Tile_Size) * GamePanel.Zoom;
         int startX = Math.max(0, (int)(Camera.getWorldX() / tileSize));
         int startY = Math.max(0, (int)(Camera.getWorldY() / tileSize));
         int endX = Math.min(width, startX + (cam.getViewportWidth() / tileSize) +2);
         int endY = Math.min(height, startY + (cam.getViewportHeight() / tileSize) +2);
-
         for(Layer lay : layer){
             for (int y = startY; y < endY; y++) {
                 for (int x = startX; x < endX; x++) {
@@ -80,6 +79,14 @@ public class Map {
            }
        }
        return null;
+    }
+
+    static public int getWidth() {
+        return width;
+    }
+
+    static public int getHeight() {
+        return height;
     }
 
     @Override

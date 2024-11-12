@@ -87,10 +87,10 @@ public class Vector2D {
     }
 
     // Calculate the distance between two vector (positions)
-    public double distance(Vector2D v){
-        double dx = this.x - v.x;
-        double dy = this.y - v.y;
-        return  Math.sqrt(dx * dx + dy * dy);
+    public float distance(Vector2D v){
+        float dx = this.x - v.x;
+        float dy = this.y - v.y;
+        return (float) Math.sqrt(dx * dx + dy * dy);
     }
 
     @Override

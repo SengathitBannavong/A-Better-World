@@ -1,7 +1,7 @@
 package game.entity;
 
 public enum F_Statue_Animate {
-    BasicMoveMent,
+    BasicMovement,
     Attack,
     Dead,
     Hurt,

@@ -16,8 +16,9 @@ public class GamePanel extends JPanel implements Runnable {
     public static int width;
     public static int height;
 
-    public static final int Tile_Size = 32;
-    public static final int Scale = 4;
+    public static final int Tile_Size = 16;
+    public static final int Scale = 8;
+    public static final int Zoom = 2;
 
     // Frames
     public static int oldFrameCount;
@@ -78,7 +79,8 @@ public class GamePanel extends JPanel implements Runnable {
         // 16.666666666666668 ms
         final double TBU = 1_000_000_000 / GAME_HERTZ; // Time before update
 
-        final int MUBR = 5; // Must update before render
+        final int MUBR = 1; // Must update before render
+        final int MUBU = 5; // Must update before update
 
         double lastUpdateTime = System.nanoTime();
         double lastRenderTime = System.nanoTime();
@@ -105,7 +107,7 @@ public class GamePanel extends JPanel implements Runnable {
 
             int updateCount = 0;
             // Update the game
-            while(deltaUpdate >= 1 && (updateCount < MUBR)) {
+            while(deltaUpdate >= 1 && (updateCount < MUBU)) {
                 input(mouse, key);
                 if(!tick_state && key.escape.down){
                     tick_state = true;
@@ -116,8 +118,9 @@ public class GamePanel extends JPanel implements Runnable {
                 updateCount++;
             }
             tickcount++;
+            int renderCount = 0;
             // Render the game
-            while (deltaRender >= 1) {
+            while (deltaRender >= 1 && (renderCount < MUBR)) {
                 // Render
                 input(mouse, key);
                 render();
@@ -125,6 +128,7 @@ public class GamePanel extends JPanel implements Runnable {
                 deltaRender--;
                 lastRenderTime = now;
                 frameCount++;
+                renderCount++;
             }
             if(tickcount > 25){
                 tick_state = false;
@@ -162,7 +166,7 @@ public class GamePanel extends JPanel implements Runnable {
     public void render() {
         // Render the game
         if(graphics2D != null) {
-            graphics2D.setColor(new Color(66, 134, 244));
+            graphics2D.setColor(new Color(109, 220, 239));
             graphics2D.fillRect(0, 0, width, height);
             gameStateManager.render(graphics2D);
         }

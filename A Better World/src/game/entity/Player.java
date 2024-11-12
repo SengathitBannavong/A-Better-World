@@ -6,27 +6,28 @@ import game.Input.KeyHandler;
 import game.Input.MouseHandler;
 import game.graphic.Camera;
 import game.graphic.Sprite;
-import game.physic.AABB;
+import game.movement.BasicMovement;
+import game.movement.MovementStrategy;
 import game.physic.Vector2D;
-import game.state.PlayState;
 
 import java.awt.*;
 import java.util.Arrays;
 
 public class Player extends Entity{
 
+    private MovementStrategy movementStrategy;
+
     private static Camera camera;
 
-    // Movement
+    // Optimize this to Dash class
+    // Dash Movement
     private boolean dashPrssed = false;
     private final float dashSpeed = 1.5f;
     private boolean isDash = false;
     private boolean stillDash = false;
     private final float DefaultSpeed = 3f;
 
-    // Hit box
-    AABB hitBounds;
-
+    // Optimize this to parse source in file txt
     private Sprite[] setDefaultSpite(){
         Sprite[] sprite = new Sprite[F_List_Animation_Sprite.SIZE.ordinal()];
         sprite[F_List_Animation_Sprite.Idle.ordinal()] = new Sprite("player/Player_idle_64_64_sprite.png", 64, 64);
@@ -38,12 +39,13 @@ public class Player extends Entity{
         return sprite;
     }
 
-    public Player(Vector2D origin, int sizeRender) {
-        super(origin, GamePanel.Tile_Size, sizeRender);
+    public Player(Vector2D origin,int size ,int sizeSprite) {
+        super(origin, size, sizeSprite);
         this.sprite = setDefaultSpite();
         setAnimation(F_Direction.RIGHT, sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(F_Direction.RIGHT.ordinal()), 10);
-        camera = new Camera(origin, ((float) GamePanel.width /2) - ((float) sizeSprite /2),((float) GamePanel.height /2) - ((float) sizeSprite /2), GamePanel.width, GamePanel.height);
-        hitBounds = new AABB(origin, GamePanel.Tile_Size, GamePanel.Tile_Size);
+        camera = new Camera(origin, ((float) GamePanel.width/2 - sizeSprite - GamePanel.Tile_Size) ,((float) GamePanel.height/2 - sizeSprite - GamePanel.Tile_Size), GamePanel.width, GamePanel.height);
+        super.setHitbox(origin,(sizeSprite / 2) * GamePanel.Zoom , (sizeSprite / 2) * GamePanel.Zoom);
+        movementStrategy = new BasicMovement();
     }
 
     public void update(){
@@ -66,7 +68,7 @@ public class Player extends Entity{
     }
 
     public void setupDirectionMovement(){
-        movement();
+        movementStrategy.move(this);
         Vector2D set = new Vector2D(dx, dy);
         set = set.normalize().multiply(acc);
         origin = origin.add(set);
@@ -83,15 +85,19 @@ public class Player extends Entity{
     }
 
     public void hitbounds_update(){
-        hitBounds.setBox(origin, size, size);
+        int width = (sizeSprite / 2) * GamePanel.Zoom;
+        int height = (sizeSprite / 2)* GamePanel.Zoom;
+        hitbox.setBox(origin, width, height);
     }
 
     @Override
     public void render(Graphics2D g) {
         int renderX = (int)(origin.x - Camera.getWorldX());
         int renderY = (int)(origin.y - Camera.getWorldY());
-
-        g.drawImage(ani.getImage(),renderX, renderY, sizeSprite, sizeSprite, null);
+        System.out.println("RenderX: "+renderX);
+        System.out.println("RenderY: "+renderY);
+        int rendersize = size * GamePanel.Zoom;
+        g.drawImage(ani.getImage(),renderX, renderY,rendersize,rendersize, null);
         if(Debug.debugging) {
             renderDebug(g, renderX, renderY);
         }
@@ -99,128 +105,9 @@ public class Player extends Entity{
 
     public void renderDebug(Graphics2D g, int renderX, int renderY){
         g.setColor(Color.YELLOW);
-        g.drawRect(renderX, renderY, sizeSprite, sizeSprite);
-        hitBounds.render(g);
-    }
-
-    public void movement(){
-        // Dash case
-        if(stillDash){
-            if(currentDirection == F_Direction.UP){
-                acc_moveup();
-            }
-            if(currentDirection == F_Direction.DOWN){
-                acc_movedown();
-            }
-            if(currentDirection == F_Direction.LEFT){
-                acc_moveleft();
-            }
-            if(currentDirection == F_Direction.RIGHT){
-                acc_moveright();
-            }
-            return;
-        }
-        // Attack case
-        if(statueAnimate == F_Statue_Animate.Attack){
-            if(!movement_dir[F_Direction.UP.ordinal()]) {
-                deacc_moveup();
-            }
-            if(!movement_dir[F_Direction.DOWN.ordinal()]) {
-                deacc_movedown();
-            }
-            if(!movement_dir[F_Direction.LEFT.ordinal()]) {
-                deacc_moveleft();
-            }
-            if(!movement_dir[F_Direction.RIGHT.ordinal()]) {
-                deacc_moveright();
-            }
-            return;
-        }
-
-        // Basic Movement case
-        if(movement_dir[F_Direction.UP.ordinal()]){
-            acc_moveup();
-        }else{
-            deacc_moveup();
-        }
-
-        if(movement_dir[F_Direction.DOWN.ordinal()]) {
-            acc_movedown();
-        }else{
-            deacc_movedown();
-        }
-
-        if(movement_dir[F_Direction.LEFT.ordinal()]){
-            acc_moveleft();
-        }else{
-            deacc_moveleft();
-        }
-
-        if(movement_dir[F_Direction.RIGHT.ordinal()]) {
-            acc_moveright();
-        }else{
-            deacc_moveright();
-        }
-
-    }
-
-    private void acc_moveup(){
-        dy -= acc;
-        if(dy < -maxSpeed){
-            dy = -maxSpeed;
-        }
-    }
-    private void acc_movedown(){
-        dy += acc;
-        if (dy > maxSpeed) {
-            dy = maxSpeed;
-        }
-    }
-    private void acc_moveleft(){
-        dx -= acc;
-        if(dx < -maxSpeed){
-            dx = -maxSpeed;
-        }
-    }
-    private void acc_moveright(){
-        dx += acc;
-        if (dx > maxSpeed) {
-            dx = maxSpeed;
-        }
-    }
-
-    private void deacc_moveup(){
-        if(dy < 0){
-            dy += deacc;
-            if(dy > 0){
-                dy = 0;
-            }
-        }
-    }
-    private void deacc_movedown(){
-        if(dy > 0){
-            dy -= deacc;
-            if(dy < 0){
-                dy = 0;
-            }
-        }
-    }
-    private void deacc_moveleft(){
-        if(dx < 0){
-            dx += deacc;
-            if(dx > 0){
-                dx = 0;
-            }
-        }
-    }
-    private void deacc_moveright(){
-        if(dx > 0){
-
-            dx -= deacc;
-            if(dx < 0){
-                dx = 0;
-            }
-        }
+        int rendersize = size * GamePanel.Zoom;
+        g.drawRect(renderX, renderY, rendersize, rendersize);
+        hitbox.render(g);
     }
 
     public void setDashSpeed(){
@@ -236,7 +123,6 @@ public class Player extends Entity{
     }
 
     public void input(KeyHandler key, MouseHandler mouse) {
-
         if(key.up.down){
             movement_dir[F_Direction.UP.ordinal()] = true;
         }else{
@@ -267,12 +153,8 @@ public class Player extends Entity{
 
         if(key.dash.down){
             isDash = true;
-            if(!dashPrssed) {
-                movement_dir[F_Direction.DASH.ordinal()] = true;
-            }
         }else{
             isDash = false;
-            movement_dir[F_Direction.DASH.ordinal()] = false;
             setDashPrssed(false);
         }
 
@@ -281,7 +163,7 @@ public class Player extends Entity{
             setFlase();
         }else{
             if(!stillAttack) {
-                statueAnimate = F_Statue_Animate.BasicMoveMent;
+                statueAnimate = F_Statue_Animate.BasicMovement;
             }
         }
     }
@@ -299,7 +181,7 @@ public class Player extends Entity{
     }
 
     private boolean checkmovent(){
-        for(int i = F_Direction.UP.ordinal(); i < F_Direction.DASH.ordinal(); i++){
+        for(int i = F_Direction.UP.ordinal(); i < F_Direction.SIZE.ordinal(); i++){
             if(movement_dir[i]){
                 return true;
             }
@@ -322,7 +204,7 @@ public class Player extends Entity{
             if(ani.getFrame() == 4){
                 System.out.println("Dash done");
                 stillDash = false;
-                statueAnimate = F_Statue_Animate.BasicMoveMent;
+                statueAnimate = F_Statue_Animate.BasicMovement;
                 ani.setFrames(sprite[F_List_Animation_Sprite.Walking.ordinal()].getSpriteArray(currentDirection.ordinal()));
                 ani.setDelay(5);
                 setDashPrssed(true);

@@ -1,58 +1,22 @@
 package game.entity;
 
-import game.graphic.Animation;
-import game.graphic.Sprite;
+import game.object.BaseGameObject;
 import game.physic.Vector2D;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 
-public abstract class Entity {
-    // Animation
-    protected Animation ani;
-    protected F_Direction currentAnimation;
-    protected F_Direction currentDirection;
-    protected boolean isMoving;
-    protected F_Statue_Animate statueAnimate;
-    protected boolean stillAttack;
-
-    // Vector2D
-    protected Vector2D origin;
-    // Sprite Basic movement
-    protected Sprite[] sprite;
-    // Size
-    protected int size;
-    protected int sizeSprite;
-    // Movement Direction
-    protected boolean[] movement_dir;
+public abstract class Entity extends BaseGameObject {
     // Abilities
-    protected static int attackSpeed = 50;
+    protected int attackSpeed = 50;
     protected int attackDuration;
     protected int attackTimer;
-    // Speed
-    protected float dx;
-    protected float dy;
-    protected int maxSpeed = 20;
-    protected float acc = 3f; // Acceleration
-    protected float deacc = 3f; // Deceleration
+
+    protected boolean[] movement_dir;
 
     public Entity(Vector2D origin, int size,int sizeSprite) {
-        this.origin = origin;
-        this.size = size;
-        this.sizeSprite = sizeSprite;
-
+        super(origin,size,sizeSprite);
         movement_dir = new boolean[F_Direction.SIZE.ordinal()];
-        ani = new Animation();
-        statueAnimate = F_Statue_Animate.BasicMoveMent;
-
-        isMoving = false;
-    }
-
-    public void setAnimation(F_Direction fMovement, BufferedImage[] spriteArray, int delay){
-        currentAnimation = fMovement;
-        currentDirection = fMovement;
-        ani.setFrames(spriteArray);
-        ani.setDelay(delay);
     }
 
     public void animate() {
@@ -150,10 +114,10 @@ public abstract class Entity {
         }
         attackTimer++;
 
-        if(ani.getFrame() == 6){
+        if(ani.getFrame() == ani.getNumFrames() - 2){ // done fast 2 frame for handle run attack
             System.out.println("Attack done");
             stillAttack = false;
-            statueAnimate = F_Statue_Animate.BasicMoveMent;
+            statueAnimate = F_Statue_Animate.BasicMovement;
             ani.setFrames(sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(currentDirection.ordinal()));
             ani.setDelay(12);
             isMoving = false;
@@ -162,7 +126,7 @@ public abstract class Entity {
     }
 
     public void setMovement(F_Direction fMovement, boolean b) {
-        movement_dir[fMovement.ordinal()] = b;
+
     }
 
 
@@ -176,5 +140,41 @@ public abstract class Entity {
 
     public int getSize() {
         return size;
+    }
+
+    public float getDx() {
+        return dx;
+    }
+
+    public float getDy() {
+        return dy;
+    }
+
+    public float getAcc() {
+        return acc;
+    }
+
+    public float getDe_acc() {
+        return de_acc;
+    }
+
+    public int getMaxSpeed() {
+        return maxSpeed;
+    }
+
+    public boolean[] getMovement_dir() {
+        return movement_dir;
+    }
+
+    public boolean isMoving(){
+        return isMoving && !stillAttack;
+    }
+
+    public void setDx(float dx) {
+        this.dx = dx;
+    }
+
+    public void setDy(float dy) {
+        this.dy = dy;
     }
 }

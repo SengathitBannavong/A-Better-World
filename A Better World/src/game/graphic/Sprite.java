@@ -33,7 +33,7 @@ public class Sprite {
             System.out.println(this.hSprite + " " + this.wSprite + "Size");
             loadSpriteArray(); // Only load if sprite sheet is valid
         } else {
-            System.err.println("Error: Sprite sheet could not be loaded.");
+            System.err.println("Error: Sprite sheet could not be loaded. by " + source);
         }
     }
 
@@ -52,7 +52,7 @@ public class Sprite {
             System.out.println(this.hSprite + " " + this.wSprite + "Size");
             loadSpriteArray(); // Only load if sprite sheet is valid
         } else {
-            System.err.println("Error: Sprite sheet could not be loaded.");
+            System.err.println("Error: Sprite sheet could not be loaded. by " + source);
         }
 
     }
