@@ -9,6 +9,7 @@ import game.graphic.Sprite;
 import game.movement.BasicMovement;
 import game.movement.MovementStrategy;
 import game.physic.Vector2D;
+import game.tile.Map;
 
 import java.awt.*;
 import java.util.Arrays;
@@ -60,11 +61,30 @@ public class Player extends Entity{
 
         camera_update();
         hitbounds_update();
+        checkMapBoundaries();
+    }
+
+    private void checkMapBoundaries() {
+        int mapWidth = Map.getWidth() * (GamePanel.Tile_Size + ((GamePanel.Scale * GamePanel.Zoom) - 2));
+        int mapHeight = Map.getHeight() * (GamePanel.Tile_Size + ((GamePanel.Scale * GamePanel.Zoom) - 2));
+        // Ensure the player does not go out of the map boundaries
+        if (origin.x < -99) {
+            origin.x = -99;
+        } else if (origin.x > mapWidth) {
+            origin.x = mapWidth;
+        }
+
+        if (origin.y < -99) {
+            origin.y = -99;
+        } else if (origin.y > mapHeight) {
+            origin.y = mapHeight;
+        }
     }
 
     public void camera_update(){
         camera.setPlayerPosition(origin);
         camera.update();
+        camera.setMapSize((Map.getWidth() * (GamePanel.Tile_Size))+(GamePanel.Tile_Size * 3), Map.getHeight() * (GamePanel.Tile_Size + GamePanel.Scale));
     }
 
     public void setupDirectionMovement(){
@@ -94,8 +114,6 @@ public class Player extends Entity{
     public void render(Graphics2D g) {
         int renderX = (int)(origin.x - Camera.getWorldX());
         int renderY = (int)(origin.y - Camera.getWorldY());
-        System.out.println("RenderX: "+renderX);
-        System.out.println("RenderY: "+renderY);
         int rendersize = size * GamePanel.Zoom;
         g.drawImage(ani.getImage(),renderX, renderY,rendersize,rendersize, null);
         if(Debug.debugging) {
