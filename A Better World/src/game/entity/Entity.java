@@ -1,10 +1,12 @@
 package game.entity;
 
+import game.enum_.F_Direction;
+import game.enum_.F_List_Animation_Sprite;
+import game.enum_.F_Statue_Animate;
 import game.object.BaseGameObject;
 import game.physic.Vector2D;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
 
 public abstract class Entity extends BaseGameObject {
     // Abilities

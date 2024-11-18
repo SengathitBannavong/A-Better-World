@@ -1,5 +1,6 @@
 package game.graphic;
 
+import game.GamePanel;
 import game.physic.Vector2D;
 import game.tile.Map;
 
@@ -9,8 +10,6 @@ public class Camera {
     private final float offsetY;
     private final int viewportWidth;   // Width of the visible area (in pixels)
     private final int viewportHeight;  // Height of the visible area (in pixels)
-    private int mapWidth;
-    private int mapHeight;
 
     public Camera(Vector2D playerPosition, float offsetX, float offsetY, int viewportWidth, int viewportHeight) {
         this.playerPosition = playerPosition;
@@ -24,7 +23,8 @@ public class Camera {
         float camX = playerPosition.x - offsetX;
         float camY = playerPosition.y - offsetY;
         // Ensure the camera does not go out of the map boundaries
-
+        int mapWidth = ((Map.getWidth() * GamePanel.Tile_Size * Map.getScale() * GamePanel.Zoom) - viewportWidth);
+        int mapHeight =((Map.getHeight() * GamePanel.Tile_Size * Map.getScale() * GamePanel.Zoom) - viewportHeight);
         float camXbuffer = Math.min(camX, mapWidth);
         float camYbuffer = Math.min(camY, mapHeight);
         camX = Math.max(0, camXbuffer);
@@ -52,8 +52,4 @@ public class Camera {
         return viewportHeight;
     }
 
-    public void setMapSize(int mapWidth, int mapHeight) {
-        this.mapWidth = mapWidth;
-        this.mapHeight = mapHeight;
-    }
 }

@@ -4,6 +4,9 @@ import game.Debug;
 import game.GamePanel;
 import game.Input.KeyHandler;
 import game.Input.MouseHandler;
+import game.enum_.F_Direction;
+import game.enum_.F_List_Animation_Sprite;
+import game.enum_.F_Statue_Animate;
 import game.graphic.Camera;
 import game.graphic.Sprite;
 import game.movement.BasicMovement;
@@ -65,8 +68,11 @@ public class Player extends Entity{
     }
 
     private void checkMapBoundaries() {
-        int mapWidth = Map.getWidth() * (GamePanel.Tile_Size + ((GamePanel.Scale * GamePanel.Zoom) - 2));
-        int mapHeight = Map.getHeight() * (GamePanel.Tile_Size + ((GamePanel.Scale * GamePanel.Zoom) - 2));
+        // check the map boundaries
+        int bound = ((GamePanel.Tile_Size * GamePanel.Zoom * GamePanel.Scale) / 2);
+        int sizeHitbox = (sizeSprite / 2) * GamePanel.Zoom;
+        int mapWidth = (Map.getWidth() * GamePanel.Tile_Size * Map.getScale() * GamePanel.Zoom) - (bound + (sizeHitbox/2));
+        int mapHeight = (Map.getHeight() * GamePanel.Tile_Size * Map.getScale() * GamePanel.Zoom) - (bound + (sizeHitbox/2));
         // Ensure the player does not go out of the map boundaries
         if (origin.x < -99) {
             origin.x = -99;
@@ -84,7 +90,6 @@ public class Player extends Entity{
     public void camera_update(){
         camera.setPlayerPosition(origin);
         camera.update();
-        camera.setMapSize((Map.getWidth() * (GamePanel.Tile_Size))+(GamePanel.Tile_Size * 3), Map.getHeight() * (GamePanel.Tile_Size + GamePanel.Scale));
     }
 
     public void setupDirectionMovement(){

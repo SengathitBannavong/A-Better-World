@@ -24,10 +24,7 @@ public class TileSet {
         }
 
         public BufferedImage getImage(int i){
-            if(i >= firstGid){
-                return sprite.getSprite((i - firstGid) % tileColumns, (i - firstGid) / tileColumns);
-            }
-            return null;
+            return (i >= firstGid) ? sprite.getSprite((i - firstGid) % tileColumns, (i - firstGid) / tileColumns) : null;
         }
 
         public int getFirstGid() {

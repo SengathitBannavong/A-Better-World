@@ -1,7 +1,7 @@
 package game.object;
 
-import game.entity.F_Direction;
-import game.entity.F_Statue_Animate;
+import game.enum_.F_Direction;
+import game.enum_.F_Statue_Animate;
 import game.graphic.Animation;
 import game.graphic.Sprite;
 import game.physic.AABB;

@@ -15,6 +15,7 @@ public class GamePanel extends JPanel implements Runnable {
     // GamePanel
     public static int width;
     public static int height;
+    public static float ratio = 0;
 
     public static final int Tile_Size = 16;
     public static final int Scale = 8;
@@ -41,6 +42,7 @@ public class GamePanel extends JPanel implements Runnable {
     public GamePanel(int width, int height) {
         GamePanel.width = width;
         GamePanel.height = height;
+        ratio = 0.5f; // height / width =  0.5194805194805194
         setPreferredSize(new Dimension(width, height));
         setFocusable(true);
         requestFocus();
@@ -174,7 +176,7 @@ public class GamePanel extends JPanel implements Runnable {
 
     public void draw() {
         // Draw the game
-        Graphics g2 =(Graphics) this.getGraphics();
+        Graphics g2 = this.getGraphics();
         g2.drawImage(image, 0, 0, width, height, null);
         g2.dispose();
     }

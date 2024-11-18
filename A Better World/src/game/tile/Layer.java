@@ -17,8 +17,9 @@ public class Layer {
 
     public void parseString(String data) {
         String[] parts = data.split(",");
-        for (int i = 0; i < parts.length; i++) {
-            this.data[i] = Integer.parseInt(parts[i].replaceAll("\\s+", ""));
+        int i = 0;
+        for (String part : parts) {
+            this.data[i++] = Integer.parseInt(part.trim());
         }
     }
 
@@ -27,7 +28,7 @@ public class Layer {
     }
 
     public int getPos(int x, int y) {
-        return data[(x * width) + y];
+        return data[x * width + y];
     }
 
     public int getIndex() {

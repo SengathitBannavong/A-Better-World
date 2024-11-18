@@ -23,9 +23,15 @@ public class MapParse {
                 Document document = builder.parse(getClass().getClassLoader().getResourceAsStream(path));
                 document.getDocumentElement().normalize();
 
-                int width = Integer.parseInt(document.getDocumentElement().getAttribute("width"));
-                int height = Integer.parseInt(document.getDocumentElement().getAttribute("height"));
+                String widthAttr = document.getDocumentElement().getAttribute("width");
+                String heightAttr = document.getDocumentElement().getAttribute("height");
+                String scaleAttr = document.getDocumentElement().getAttribute("scale");
+
+                int width = !widthAttr.isEmpty() ? Integer.parseInt(widthAttr) : 0;
+                int height = !heightAttr.isEmpty() ? Integer.parseInt(heightAttr) : 0;
+                int scale = !scaleAttr.isEmpty() ? Integer.parseInt(scaleAttr) : 1;
                 buffer_map.setSize(width, height);
+                buffer_map.setScale(scale);
 
                 NodeList list = document.getElementsByTagName("tileset");
                 int i = 0;
@@ -71,9 +77,9 @@ public class MapParse {
                 System.out.println("Error: No layers found in XML.");
                 return null;
             }
-            } catch (Exception e) {
+         } catch (Exception e) {
                 e.printStackTrace();
-            }
+         }
 
 
          return buffer_map;

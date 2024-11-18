@@ -1,7 +1,7 @@
 package game.movement;
 
 import game.entity.Entity;
-import game.entity.F_Direction;
+import game.enum_.F_Direction;
 
 public class BasicMovement implements MovementStrategy {
 

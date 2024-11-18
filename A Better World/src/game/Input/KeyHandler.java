@@ -46,6 +46,7 @@ public class KeyHandler implements KeyListener {
     public Key enter = new Key();
     public Key escape = new Key();
     public Key dash = new Key();
+    public Key pause = new Key();
 
     public KeyHandler(GamePanel game){
         game.addKeyListener(this);
@@ -74,6 +75,7 @@ public class KeyHandler implements KeyListener {
             case KeyEvent.VK_ENTER -> enter.toggle(pressed);
             case KeyEvent.VK_ESCAPE -> escape.toggle(pressed);
             case KeyEvent.VK_SHIFT -> dash.toggle(pressed);
+            case KeyEvent.VK_MINUS -> pause.toggle(pressed);
         }
     }
 

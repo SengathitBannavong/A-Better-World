@@ -4,6 +4,7 @@ package game.state;
 
 import game.Input.KeyHandler;
 import game.Input.MouseHandler;
+import game.enum_.Flag_GameState;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -12,38 +13,45 @@ public class GameStateManager {
 
     private ArrayList<GameState> states;
 
-    public static final int PLAY = 0;
-    public static final int MENU = 1;
-    public static final int PAUSE = 2;
-    public static final int GAMEOVER = 3;
+    public static Flag_GameState PLAY = Flag_GameState.PLAY;
+    public static Flag_GameState MENU = Flag_GameState.MENU;
+    public static Flag_GameState PAUSE = Flag_GameState.PAUSE;
+    public static Flag_GameState GAMEOVER = Flag_GameState.GAMEOVER;
 
     public GameStateManager() {
         states = new ArrayList<>();
-        states.add(new PlayState(this));
+        CachesState.setState(new PlayState(this));
+        states.add(CachesState.getState());
     }
 
     public void pop(int state) {
+        CachesState.setState(states.get(state));
         states.remove(state);
     }
 
     public void add(int state) {
-        if(state == PLAY) {
-            states.add(new PlayState(this));
+        if(state == PLAY.ordinal()) {
+            if(CachesState.isStateNull()) {
+                states.add(new PlayState(this));
+            } else {
+                states.add(CachesState.getState());
+            }
         }
-        if(state == MENU) {
+        if(state == MENU.ordinal()) {
             states.add(new MenuState(this));
         }
-        if(state == PAUSE) {
+        if(state == PAUSE.ordinal()) {
             states.add(new PauseState(this));
         }
-        if(state == GAMEOVER) {
+        if(state == GAMEOVER.ordinal()) {
             states.add(new GameOverState(this));
         }
     }
 
     public void addAndPop(int state) {
-        pop(0);
+        System.out.println("Swift state");
         add(state);
+        pop(0);
     }
 
     public void update() {
