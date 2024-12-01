@@ -3,13 +3,16 @@ package game.state;
 import game.Input.KeyHandler;
 import game.Input.MouseHandler;
 import game.graphic.Font;
+import game.physic.Vector2D;
 
 import java.awt.*;
 
 public abstract class GameState {
 
     protected GameStateManager gsm;
-    protected static final game.graphic.Font font = new Font("font/font.png", 10, 10);
+    public static final game.graphic.Font font = new Font("font/font.png", 10, 10);
+    protected static String [] Map_name;
+    protected static Vector2D[] Map_origin;
 
     public GameState(GameStateManager gsm) {
         this.gsm = gsm;

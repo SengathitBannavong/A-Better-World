@@ -21,6 +21,7 @@ public class BasicMovement implements MovementStrategy {
         acc = entity.getAcc();
         de_acc = entity.getDe_acc();
         maxSpeed = entity.getMaxSpeed();
+
         // Basic Movement case
         if(isMoving && direction[F_Direction.UP.ordinal()]) {
             acc_moveup();

@@ -58,6 +58,7 @@ public abstract class BaseGameObject {
     public void setHitbox(Vector2D position,int width,int height){
         hitbox = new AABB(position,width,height);
     }
+    public AABB getHitbox(){return hitbox;}
 
     public abstract void animate();
     public abstract void update();

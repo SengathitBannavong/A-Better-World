@@ -11,7 +11,7 @@ public class Window extends JFrame {
     }
 
     public Window(int width, int height) {
-        setTitle("Monster Hunter");
+        setTitle("A BETTER WORLD");
         setSize(width, height);
         setContentPane(new GamePanel(width, height));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

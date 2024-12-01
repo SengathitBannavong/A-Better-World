@@ -1,0 +1,10 @@
+size = "9"
+1.Map_Forest -84 1558
+2.Map_Village -78 1432
+3.Map_middle -90 362
+4.Map_Level1 1123 3007
+5.Map_dungeon_final_boss 424 118
+6.Map_Village_back_Forest 3025 1522
+7.Map_middle_back_Village 6225 1449
+8.Map_Level1_back_middle 647 -25
+9.Map_dungeon_back_Level1 797 96

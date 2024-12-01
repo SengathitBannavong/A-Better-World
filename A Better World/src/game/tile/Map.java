@@ -3,6 +3,7 @@ package game.tile;
 import game.Debug;
 import game.GamePanel;
 import game.graphic.Camera;
+import game.object.GridCell;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -39,16 +40,16 @@ public class Map {
     }
 
     public void setWidth(int width) {
-        this.width = width;
+        Map.width = width;
     }
 
     public void setHeight(int height) {
-        this.height = height;
+        Map.height = height;
     }
 
     public void setSize(int width, int height) {
-        this.width = width;
-        this.height = height;
+        Map.width = width;
+        Map.height = height;
     }
 
     public void setScale(int scale) {

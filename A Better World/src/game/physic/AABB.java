@@ -135,7 +135,7 @@ public class AABB {
             g.setColor(Color.RED);
             int x = (int) (position.getWorldVar().x + (width / 2) + xOffset);
             int y = (int) (position.getWorldVar().y + (height / 2) + yOffset);
-            g.drawRect(x, y, size, size);
+            g.drawRect(x, y,(int) width, (int) height);
         }
     }
 

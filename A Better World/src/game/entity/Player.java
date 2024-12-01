@@ -11,7 +11,11 @@ import game.graphic.Camera;
 import game.graphic.Sprite;
 import game.movement.BasicMovement;
 import game.movement.MovementStrategy;
+import game.physic.AABB;
 import game.physic.Vector2D;
+import game.state.GameState;
+import game.state.GameStateManager;
+import game.tile.GridCellWrite;
 import game.tile.Map;
 
 import java.awt.*;
@@ -30,6 +34,8 @@ public class Player extends Entity{
     private boolean isDash = false;
     private boolean stillDash = false;
     private final float DefaultSpeed = 3f;
+
+    GridCellWrite gridCellWrite = new GridCellWrite(GameStateManager.getMapName(1));
 
     // Optimize this to parse source in file txt
     private Sprite[] setDefaultSpite(){
@@ -87,6 +93,18 @@ public class Player extends Entity{
         }
     }
 
+    private boolean checkHitWall(Vector2D origin_future){
+        int[][] grid_wall = getGridNearPlayer(origin_future);
+        for(int i = 0; i < 3; i++){
+            for(int j = 0; j < 3; j++){
+                if(grid_wall[i][j] == 1){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public void camera_update(){
         camera.setPlayerPosition(origin);
         camera.update();
@@ -94,8 +112,13 @@ public class Player extends Entity{
 
     public void setupDirectionMovement(){
         movementStrategy.move(this);
-        Vector2D set = new Vector2D(dx, dy);
+        Vector2D set;
+        set = new Vector2D(dx, dy);
         set = set.normalize().multiply(acc);
+        Vector2D temp = origin.add(set);
+        if(checkHitWall(temp) && Debug.collision){
+            set = new Vector2D(0, 0);
+        }
         origin = origin.add(set);
     }
 
@@ -123,6 +146,7 @@ public class Player extends Entity{
         g.drawImage(ani.getImage(),renderX, renderY,rendersize,rendersize, null);
         if(Debug.debugging) {
             renderDebug(g, renderX, renderY);
+            drawGridAroundPlayer(g);
         }
     }
 
@@ -131,6 +155,7 @@ public class Player extends Entity{
         int rendersize = size * GamePanel.Zoom;
         g.drawRect(renderX, renderY, rendersize, rendersize);
         hitbox.render(g);
+        Sprite.drawArray(g, GameState.font, "X: " + (int)origin.x + " Y: " + (int)origin.y, new Vector2D(renderX, renderY - 10), 32, 32, 16, 0);
     }
 
     public void setDashSpeed(){
@@ -189,6 +214,31 @@ public class Player extends Entity{
                 statueAnimate = F_Statue_Animate.BasicMovement;
             }
         }
+
+        if(key.write.down){
+            System.out.println("Write");
+            GridCellWrite.writeGrid();
+            //delay
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(key.cell.down){
+            int pos_x = ((int)origin.x)  / (GamePanel.Tile_Size * GamePanel.Zoom);
+            int pos_y = ((int)origin.y) / (GamePanel.Tile_Size * GamePanel.Zoom);
+            gridCellWrite.setGrid(pos_x, pos_y);
+            System.out.println("Cell : "+pos_x+" "+pos_y);
+        }
+
+        if(key.deletecell.down){
+            int pos_x = ((int)origin.x)  / (GamePanel.Tile_Size * GamePanel.Zoom);
+            int pos_y = ((int)origin.y) / (GamePanel.Tile_Size * GamePanel.Zoom);
+            gridCellWrite.deleteGrid(pos_x, pos_y);
+            System.out.println("Cell : "+pos_x+" "+pos_y);
+        }
     }
 
     private void setFlase(){
@@ -202,6 +252,8 @@ public class Player extends Entity{
     public boolean isDashPrssed() {
         return dashPrssed;
     }
+
+    public AABB getHitbox(){return hitbox;}
 
     private boolean checkmovent(){
         for(int i = F_Direction.UP.ordinal(); i < F_Direction.SIZE.ordinal(); i++){
@@ -231,6 +283,60 @@ public class Player extends Entity{
                 ani.setFrames(sprite[F_List_Animation_Sprite.Walking.ordinal()].getSpriteArray(currentDirection.ordinal()));
                 ani.setDelay(5);
                 setDashPrssed(true);
+            }
+        }
+    }
+
+    public void setPlayerPosition(Vector2D origin){
+        this.origin = origin;
+    }
+
+    // get grid in screen
+    public int[][] getGridAroundPlayer(){
+        int[][] grid = new int[10][10];
+        int x = (int)origin.x / (GamePanel.Tile_Size * GamePanel.Zoom);
+        int y = (int)origin.y / (GamePanel.Tile_Size * GamePanel.Zoom);
+        int mapWidth = Map.getWidth();
+        int mapHeight = Map.getHeight();
+        x = Math.max(Math.min(x,(mapWidth * Map.getScale())- 10), 0);
+        y = Math.max(Math.min(y,(mapHeight * Map.getScale())- 10), 0);
+        for(int i = 0; i < 10; i++){
+            for(int j = 0; j < 10; j++){
+                grid[i][j] = gridCellWrite.getGrid(x + i , y + j );
+            }
+        }
+        return grid;
+    }
+
+    public int[][] getGridNearPlayer(Vector2D origin_future){
+        int[][] n = new int[3][3];
+        int x = (int)origin_future.x / (GamePanel.Tile_Size * GamePanel.Zoom);
+        int y = (int)origin_future.y / (GamePanel.Tile_Size * GamePanel.Zoom);
+        int mapWidth = Map.getWidth();
+        int mapHeight = Map.getHeight();
+        int hitbox_x = x +3;
+        int hitbox_y = y +3;
+        hitbox_x = Math.max(Math.min(hitbox_x,(mapWidth * Map.getScale()) - 3), 0);
+        hitbox_y = Math.max(Math.min(hitbox_y,(mapHeight * Map.getScale()) - 3), 0);
+        for(int i = 0; i < 3; i++){
+            for(int j = 0; j < 3; j++){
+                n[i][j] = gridCellWrite.getGrid(hitbox_x + i , hitbox_y + j );
+            }
+        }
+        return n;
+    }
+
+    // draw grid around player
+    public void drawGridAroundPlayer(Graphics2D g){
+        int[][] grid = getGridAroundPlayer();
+        int x = (int)origin.x / (GamePanel.Tile_Size * GamePanel.Zoom);
+        int y = (int)origin.y / (GamePanel.Tile_Size * GamePanel.Zoom);
+        for(int i = 0; i < 10; i++){
+            for(int j = 0; j < 10; j++){
+                if(grid[i][j] == 1){
+                    g.setColor(Color.RED);
+                    g.fillRect((x  + i) * GamePanel.Tile_Size * GamePanel.Zoom - (int)Camera.getWorldX(), (y  + j) * GamePanel.Tile_Size * GamePanel.Zoom - (int)Camera.getWorldY(), GamePanel.Tile_Size * GamePanel.Zoom , GamePanel.Tile_Size * GamePanel.Zoom );
+                }
             }
         }
     }

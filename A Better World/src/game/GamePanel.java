@@ -100,14 +100,15 @@ public class GamePanel extends JPanel implements Runnable {
         double deltaRender = 0;
         boolean tick_state = false;
         int tickcount = 0;
-
+        double now;
+        int updateCount, renderCount, thisSecond;
         while (running) {
-            double now = System.nanoTime();
+            now = System.nanoTime();
             deltaUpdate += (now - lastUpdateTime) / TBU;
             deltaRender += (now - lastRenderTime) / TBR;
             lastUpdateTime = now;
 
-            int updateCount = 0;
+            updateCount = 0;
             // Update the game
             while(deltaUpdate >= 1 && (updateCount < MUBU)) {
                 input(mouse, key);
@@ -120,7 +121,7 @@ public class GamePanel extends JPanel implements Runnable {
                 updateCount++;
             }
             tickcount++;
-            int renderCount = 0;
+            renderCount = 0;
             // Render the game
             while (deltaRender >= 1 && (renderCount < MUBR)) {
                 // Render
@@ -137,7 +138,7 @@ public class GamePanel extends JPanel implements Runnable {
                 tickcount = 0;
             }
             // Update the frames we got
-            int thisSecond = (int) (lastUpdateTime / 1_000_000_000);
+            thisSecond = (int) (lastUpdateTime / 1_000_000_000);
             if (thisSecond > lastSecondTime) {
                 if (frameCount != oldFrameCount) {
                     System.out.println("New second: " + thisSecond + " " + frameCount);
