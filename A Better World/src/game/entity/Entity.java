@@ -179,4 +179,11 @@ public abstract class Entity extends BaseGameObject {
     public void setDy(float dy) {
         this.dy = dy;
     }
+
+    public void setAcc(float acc) {this.acc = acc;}
+    public void setDe_acc(float de_acc) {this.de_acc = de_acc;}
+
+    public Vector2D getOrigin() {return origin;}
+
+    public void setIsMoving(boolean isMoving) {this.isMoving = isMoving;}
 }

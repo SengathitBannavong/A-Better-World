@@ -7,24 +7,27 @@ import game.entity.Monster;
 import game.entity.Player;
 import game.enum_.Map_Index_Teleport;
 import game.graphic.Sprite;
-import game.object.Box;
 import game.object.BoxTP;
 import game.object.Map_teleport;
-import game.physic.AABB;
 import game.physic.Vector2D;
+import game.pool.MonsterFactory;
+import game.pool.MonsterPool;
+import game.pool.MonsterSpawner;
 import game.tile.GridCellWrite;
 import game.tile.Map;
 import game.tile.MapParse;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class PlayState extends GameState {
 
-    Player player;
+    private final Player player;
     Map maps;
-    Monster monster;
+    private static List<Monster> activeMonsters;
+    private static final MonsterSpawner monsterSpawner = new MonsterSpawner();
 
     private static final MapParse mapParse = new MapParse();
     private static Map cachedMap = mapParse.parsing("maps/"+ Map_name[0] +"_1_Layer.xml");
@@ -32,20 +35,37 @@ public class PlayState extends GameState {
     private int index = 0;
     private static Map_teleport[] map_teleport = parseMapTeleport();
 
+    private static int countdown_spawn = 0;
+
     public PlayState(GameStateManager gsm) {
         super(gsm);
         player = new Player(Map_origin[index], GamePanel.Tile_Size * GamePanel.Scale, 64); // scale the player
+        monsterPool = MonsterPool.getInit(15, new MonsterFactory(), player);
         maps = cachedMap;
         GridCellWrite.parseGrid("maps/"+ Map_name[index]+".txt");
         GridCellWrite.setPath(Map_name[index]);
         showMapTeleport();
-        monster = new Monster(Map_origin[index], GamePanel.Tile_Size * (GamePanel.Scale * 2), 128);
+        activeMonsters = new ArrayList<>();
     }
 
     @Override
     public void update() {
         player.update();
-        monster.update();
+        monsterUpdate();
+        countdownSpawn();
+    }
+
+    private void monsterUpdate(){
+        for(Monster monster : activeMonsters){
+            monster.update();
+        }
+    }
+
+    public static void countdownSpawn(){
+        if(countdown_spawn > 0 && OneSecond){
+            countdown_spawn--;
+            OneSecond = false;
+        }
     }
 
     @Override
@@ -93,15 +113,21 @@ public class PlayState extends GameState {
         maps.drawMap(g, Player.getCamera());
         Sprite.drawArray(g, font, GamePanel.oldFrameCount + " FPS", new Vector2D(GamePanel.width - 130, GamePanel.height - 50), 32, 32, 16, 0);
         player.render(g);
-        monster.render(g);
+        monsterRender(g);
         drawTeleport(g);
+    }
+
+    public void monsterRender(Graphics2D g){
+        for(Monster monster : activeMonsters){
+            monster.render(g);
+        }
     }
 
     public void drawTeleport(Graphics2D g){
         PlayState.map_teleport[index % 5].render(g);
         BoxTP temp = PlayState.map_teleport[index % 5].checkCollision(player.getHitbox());
         if(temp != null){
-            Sprite.drawArray(g, font, "Press Q To NextMap", new Vector2D((float) 80,30), 32, 32, 24, 0);
+            Sprite.drawArray(g, font, "Press Q To Next Map", new Vector2D((float) 80,30), 32, 32, 24, 0);
         }
     }
 
@@ -111,6 +137,38 @@ public class PlayState extends GameState {
             cachedMap = bufferMap;
             bufferMap = null;
         }
+    }
+
+    public static List<Monster> getActiveMonsters(){
+        return activeMonsters;
+    }
+
+    public static void spawnMonster(Vector2D position){
+        if(countdown_spawn == 0){
+            countdown_spawn = 2;
+            monsterSpawner.spawnMonster(position);
+            System.out.println("Spawn");
+        }
+    }
+
+    public static void despawnMonster(List<Monster> monsters){
+        monsterSpawner.despawnMonster(monsters);
+    }
+
+    public static void addMonster(Monster monster){
+        activeMonsters.add(monster);
+    }
+
+    public static Monster removeMonster(Monster monster){
+        Iterator<Monster> iterator = activeMonsters.iterator();
+        while(iterator.hasNext()){
+            Monster temp = iterator.next();
+            if(temp.equals(monster)){
+                iterator.remove();
+                return temp;
+            }
+        }
+        return null;
     }
 
     private static Map_teleport[] parseMapTeleport() {

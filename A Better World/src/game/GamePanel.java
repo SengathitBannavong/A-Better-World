@@ -2,6 +2,7 @@ package game;
 
 import game.Input.KeyHandler;
 import game.Input.MouseHandler;
+import game.state.GameState;
 import game.state.GameStateManager;
 
 import javax.swing.JPanel;
@@ -146,6 +147,7 @@ public class GamePanel extends JPanel implements Runnable {
                 }
                 frameCount = 0;
                 lastSecondTime = thisSecond;
+                GameState.setOneSecond(true);
             }
 
 

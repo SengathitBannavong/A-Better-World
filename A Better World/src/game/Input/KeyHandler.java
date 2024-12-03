@@ -52,6 +52,8 @@ public class KeyHandler implements KeyListener {
     public Key deletecell = new Key();
     public Key collition = new Key();
     public Key nextMap = new Key();
+    public Key spawn = new Key();
+    public Key despawn = new Key();
 
     public KeyHandler(GamePanel game){
         game.addKeyListener(this);
@@ -86,6 +88,8 @@ public class KeyHandler implements KeyListener {
             case KeyEvent.VK_9 -> deletecell.toggle(pressed);
             case KeyEvent.VK_MINUS -> collition.toggle(pressed);
             case KeyEvent.VK_Q -> nextMap.toggle(pressed);
+            case KeyEvent.VK_I -> spawn.toggle(pressed);
+            case KeyEvent.VK_O -> despawn.toggle(pressed);
         }
     }
 

@@ -4,6 +4,7 @@ import game.Debug;
 import game.GamePanel;
 import game.Input.KeyHandler;
 import game.Input.MouseHandler;
+import game.design.Observer;
 import game.enum_.F_Direction;
 import game.enum_.F_List_Animation_Sprite;
 import game.enum_.F_Statue_Animate;
@@ -15,16 +16,20 @@ import game.physic.AABB;
 import game.physic.Vector2D;
 import game.state.GameState;
 import game.state.GameStateManager;
+import game.state.PlayState;
 import game.tile.GridCellWrite;
 import game.tile.Map;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 public class Player extends Entity{
 
     private MovementStrategy movementStrategy;
-
+    private List<Observer> observers = new ArrayList<>();
     private static Camera camera;
 
     // Optimize this to Dash class
@@ -71,6 +76,7 @@ public class Player extends Entity{
         camera_update();
         hitbounds_update();
         checkMapBoundaries();
+        notifyObservers();
     }
 
     private void checkMapBoundaries() {
@@ -239,6 +245,14 @@ public class Player extends Entity{
             gridCellWrite.deleteGrid(pos_x, pos_y);
             System.out.println("Cell : "+pos_x+" "+pos_y);
         }
+
+        if(key.spawn.down){
+            PlayState.spawnMonster(origin);
+        }
+
+        if (key.despawn.down) {
+            PlayState.despawnMonster(getMonstersAroundPlayer());
+        }
     }
 
     private void setFlase(){
@@ -324,6 +338,32 @@ public class Player extends Entity{
             }
         }
         return n;
+    }
+
+    private LinkedList<Monster> getMonstersAroundPlayer(){
+        LinkedList<Monster> monsters = new LinkedList<>();
+        for(Monster monster : PlayState.getActiveMonsters()){
+            if(monster.isActive()){
+                if(hitbox.collides(monster.getHitbox())){
+                    monsters.add(monster);
+                }
+            }
+        }
+        return monsters;
+    }
+
+    public void addObserver(Observer observer){
+        observers.add(observer);
+    }
+
+    public void removeObserver(Observer observer){
+        observers.remove(observer);
+    }
+
+    public void notifyObservers(){
+        for(Observer observer : observers){
+            observer.update(this);
+        }
     }
 
     // draw grid around player
