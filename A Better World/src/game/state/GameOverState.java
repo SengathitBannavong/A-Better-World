@@ -7,8 +7,19 @@ import game.Input.MouseHandler;
 import java.awt.*;
 
 public class GameOverState extends GameState {
-    public GameOverState(GameStateManager gsm) {
+
+    // Singleton pattern
+    private static GameOverState instance = null;
+
+    private GameOverState(GameStateManager gsm) {
         super(gsm);
+    }
+
+    public static synchronized GameOverState getInit(GameStateManager gsm) {
+        if(instance == null) {
+            instance = new GameOverState(gsm);
+        }
+        return instance;
     }
 
     @Override

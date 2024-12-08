@@ -6,8 +6,19 @@ import game.Input.MouseHandler;
 import java.awt.*;
 
 public class MenuState extends GameState {
-    public MenuState(GameStateManager gsm) {
+
+    // Singleton pattern
+    private static MenuState instance = null;
+
+    private MenuState(GameStateManager gsm) {
         super(gsm);
+    }
+
+    public static synchronized MenuState getInit(GameStateManager gsm) {
+        if(instance == null) {
+            instance = new MenuState(gsm);
+        }
+        return instance;
     }
 
     @Override

@@ -4,12 +4,12 @@ import game.Debug;
 import game.GamePanel;
 import game.enum_.F_Direction;
 import game.enum_.F_List_Animation_Sprite;
+import game.enum_.F_Type_Sprite_Entity;
 import game.graphic.Camera;
 import game.graphic.Sprite;
 import game.physic.Vector2D;
 import game.pool.IPoolable;
 import game.state.GameState;
-import game.state.PlayState;
 
 import java.awt.*;
 
@@ -23,24 +23,34 @@ public class Monster extends Entity implements IPoolable {
 
     private Sprite[] setDefaultSpite(){
         Sprite[] sprite = new Sprite[F_List_Animation_Sprite.SIZE.ordinal()];
-        sprite[F_List_Animation_Sprite.Idle.ordinal()] = new Sprite("entity/Boss_idle_128_128_sprite.png", 128, 128);
-        sprite[F_List_Animation_Sprite.Walking.ordinal()] = new Sprite("entity/Boss_idle_128_128_sprite.png", 128, 128);
-        sprite[F_List_Animation_Sprite.Attack.ordinal()] = new Sprite("entity/Monster_idle_64_64_sprite.png", 64, 64);
+        sprite[F_List_Animation_Sprite.Idle.ordinal()] = new Sprite("entity/Monster1_idle_264_264_sprite.png", 264, 264);
+        sprite[F_List_Animation_Sprite.Walking.ordinal()] = new Sprite("entity/Monster1_walking_264_264_sprite.png", 264, 264);
+        sprite[F_List_Animation_Sprite.Attack.ordinal()] = new Sprite("entity/Monster1_attack_264_264_sprite.png", 264, 264);
         sprite[F_List_Animation_Sprite.Dead.ordinal()] = new Sprite("entity/Monster_idle_64_64_sprite.png", 64, 64);
         sprite[F_List_Animation_Sprite.Hurt.ordinal()] = new Sprite("entity/Monster_idle_64_64_sprite.png", 64, 64);
         sprite[F_List_Animation_Sprite.Dash.ordinal()] = new Sprite("entity/Monster_idle_64_64_sprite.png", 64, 64);
         return sprite;
     }
 
-    public Monster(Player player) {
+    private Sprite[] setSpriteType(F_Type_Sprite_Entity type){
+        Sprite[] sprite = new Sprite[F_List_Animation_Sprite.SIZE.ordinal()];
+        sprite[F_List_Animation_Sprite.Idle.ordinal()] = new Sprite("entity/Monster_idle"+type.ordinal()+"_64_64_sprite.png", 64, 64);
+        sprite[F_List_Animation_Sprite.Walking.ordinal()] = new Sprite("entity/Monster_walking"+type.ordinal()+"_64_64_sprite.png", 64, 64);
+        sprite[F_List_Animation_Sprite.Attack.ordinal()] = new Sprite("entity/Monster_attack"+type.ordinal()+"_64_64_sprite.png", 64, 64);
+        sprite[F_List_Animation_Sprite.Dead.ordinal()] = new Sprite("entity/Monster_death"+type.ordinal()+"_64_64_sprite.png", 64, 64);
+        sprite[F_List_Animation_Sprite.Hurt.ordinal()] = new Sprite("entity/Monster_hurt"+type.ordinal()+"_64_64_sprite.png", 64, 64);
+        return sprite;
+    }
+
+    public Monster(Player player, F_Type_Sprite_Entity type){
         System.out.println("Monster created");
         super(new Vector2D(0,0), 64, 64);
-        setAcc(0.5f);
-        setDe_acc(0.5f);
+        setAcc(1.5f);
+        setDe_acc(1.5f);
         this.sprite = setDefaultSpite();
         active = false;
         setHitbox(origin, 64, 64);
-        setAnimation(F_Direction.RIGHT, sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(F_Direction.UP.ordinal()), 10);
+        setAnimation(F_Direction.RIGHT, sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(F_Direction.LEFT.ordinal()), 10);
         id = count++;
         ai = new MonsterAI(this, player);
     }
@@ -80,6 +90,7 @@ public class Monster extends Entity implements IPoolable {
         g.drawImage(ani.getImage(),renderX, renderY,rendersize,rendersize, null);
         if(Debug.debugging){
             renderDebug(g, renderX, renderY);
+            ai.render(g);
         }
 
     }
@@ -113,5 +124,9 @@ public class Monster extends Entity implements IPoolable {
 
     public void setHitbox(Vector2D position){
        hitbox.setPosition(position);
+    }
+
+    public int getId(){
+        return id;
     }
 }

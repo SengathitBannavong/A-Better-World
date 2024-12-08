@@ -4,18 +4,19 @@ import game.Input.KeyHandler;
 import game.Input.MouseHandler;
 import game.graphic.Font;
 import game.physic.Vector2D;
-import game.pool.MonsterFactory;
 import game.pool.MonsterPool;
+import game.pool.NPCPool;
 
 import java.awt.*;
 
 public abstract class GameState {
 
     protected GameStateManager gsm;
-    public static final game.graphic.Font font = new Font("font/font.png", 10, 10);
+    public static final Font font = new Font("font/font.png", 10, 10);
     protected static String [] Map_name;
     protected static Vector2D[] Map_origin;
     protected static MonsterPool monsterPool;
+    protected static NPCPool npcPool;
     protected static boolean OneSecond = false;
 
     public GameState(GameStateManager gsm) {

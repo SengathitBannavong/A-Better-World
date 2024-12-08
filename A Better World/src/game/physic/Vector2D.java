@@ -104,4 +104,9 @@ public class Vector2D {
     public Vector2D abs() {
         return new Vector2D(Math.abs(x), Math.abs(y));
     }
+
+    // dot product
+    public float dot(Vector2D v) {
+        return x * v.x + y * v.y;
+    }
 }

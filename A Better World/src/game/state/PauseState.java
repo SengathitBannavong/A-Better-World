@@ -9,8 +9,18 @@ import game.physic.Vector2D;
 import java.awt.*;
 
 public class PauseState extends GameState {
-    public PauseState(GameStateManager gsm) {
+    // Singleton pattern
+    private static PauseState instance = null;
+
+    private PauseState(GameStateManager gsm) {
         super(gsm);
+    }
+
+    public static synchronized PauseState getInit(GameStateManager gsm) {
+        if(instance == null) {
+            instance = new PauseState(gsm);
+        }
+        return instance;
     }
 
     @Override
@@ -21,7 +31,7 @@ public class PauseState extends GameState {
     @Override
     public void input(MouseHandler mouse, KeyHandler key) {
         if(key.pause.down) {
-            gsm.addAndPop(GameStateManager.PLAY.ordinal());
+           // gsm.addAndPop(GameStateManager.PLAY.ordinal());
             try {
                 Thread.sleep(200); // 200 milliseconds delay
             } catch (InterruptedException e) {

@@ -4,6 +4,7 @@ import game.Input.KeyHandler;
 import game.Input.MouseHandler;
 import game.enum_.Flag_GameState;
 import game.enum_.Map_Index_Teleport;
+import game.event.Event;
 import game.physic.Vector2D;
 
 
@@ -12,64 +13,97 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Stack;
 
 public class GameStateManager {
 
-    private ArrayList<GameState> states;
+    private final Stack<GameState> states;
 
-    public static Flag_GameState PLAY = Flag_GameState.PLAY;
-    public static Flag_GameState MENU = Flag_GameState.MENU;
-    public static Flag_GameState PAUSE = Flag_GameState.PAUSE;
-    public static Flag_GameState GAMEOVER = Flag_GameState.GAMEOVER;
+//    public static Flag_GameState PLAY = Flag_GameState.PLAY;
+//    public static Flag_GameState MENU = Flag_GameState.MENU;
+//    public static Flag_GameState PAUSE = Flag_GameState.PAUSE;
+//    public static Flag_GameState GAMEOVER = Flag_GameState.GAMEOVER;
+
+    private static Map<String, Event> events;
 
     public GameStateManager() {
-        states = new ArrayList<>();
+        states = new Stack<>();
+        events = new HashMap<>();
+        Init();
+    }
+
+    private void Init(){
         parseMapName();
         showMapName();
-        CachesState.setState(new PlayState(this));
-        states.add(CachesState.getState());
+        LoadEvent(Map_Index_Teleport.Dungeon.ordinal());
+        CachesState.setState(PlayState.getInit(this));
+        states.push(CachesState.getState());
     }
 
-    public void pop(int state) {
-        CachesState.setState(states.get(state));
-        states.remove(state);
-    }
-
-    public void add(int state) {
-        if(state == PLAY.ordinal()) {
-            if(CachesState.isStateNull()) {
-                states.add(new PlayState(this));
-            } else {
-                states.add(CachesState.getState());
-            }
-        }
-        if(state == MENU.ordinal()) {
-            states.add(new MenuState(this));
-        }
-        if(state == PAUSE.ordinal()) {
-            states.add(new PauseState(this));
-        }
-        if(state == GAMEOVER.ordinal()) {
-            states.add(new GameOverState(this));
+    public void addState(Flag_GameState state) {
+        switch (state) {
+            case PLAY:
+                states.push(PlayState.getInit(this));
+                break;
+            case MENU:
+                states.push(MenuState.getInit(this));
+                break;
+            case PAUSE:
+                states.push(PauseState.getInit(this));
+                break;
+            case GAMEOVER:
+                states.push(GameOverState.getInit(this));
+                break;
+            default:
+                break;
         }
     }
 
-    public void addAndPop(int state) {
-        System.out.println("Swift state");
-        add(state);
-        pop(0);
+    public void addAndPop(Flag_GameState state) {
+        states.pop();
+        addState(state);
+    }
+
+    public void pop() {
+        if(!states.isEmpty()){
+            states.pop();
+        }
+    }
+
+    private void LoadEvent(int size){
+        for(int i = 0; i < size; i++){
+            System.out.println("Load Event name: "+GameState.Map_name[i]);
+           Event event = new Event(GameState.Map_name[i]);
+           events.put(GameState.Map_name[i], event);
+        }
+    }
+
+    public static Event getEvent(String name){
+        return events.get(name);
     }
 
     public void update() {
-        for (GameState state : states) {
-            state.update();
+        if(!states.isEmpty()){
+            states.peek().update();
         }
     }
 
     public void input(MouseHandler mouse, KeyHandler key) {
-        for (GameState state : states) {
-            state.input(mouse, key);
+        if(!states.isEmpty()){
+            states.peek().input(mouse, key);
         }
+        CollisionHandleInput(key);
+    }
+
+    public void render(Graphics2D g) {
+       if(!states.isEmpty()){
+           states.peek().render(g);
+       }
+    }
+
+    private void CollisionHandleInput(KeyHandler key) {
         if(key.collition.down) {
             Debug.collision = !Debug.collision;
             //delay
@@ -78,12 +112,6 @@ public class GameStateManager {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-        }
-    }
-
-    public void render(Graphics2D g) {
-        for (GameState state : states) {
-            state.render(g);
         }
     }
 
@@ -112,7 +140,6 @@ public class GameStateManager {
             e.printStackTrace();
         }
     }
-
 
     private void showMapName() {
         for (String name : GameState.Map_name) {

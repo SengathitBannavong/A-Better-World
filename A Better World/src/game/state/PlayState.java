@@ -3,16 +3,19 @@ package game.state;
 import game.GamePanel;
 import game.Input.KeyHandler;
 import game.Input.MouseHandler;
+import game.design.Observarable;
+import game.design.Observer;
 import game.entity.Monster;
+import game.entity.NPC;
 import game.entity.Player;
+import game.enum_.F_Type_Sprite_Entity;
 import game.enum_.Map_Index_Teleport;
+import game.event.Event;
 import game.graphic.Sprite;
 import game.object.BoxTP;
 import game.object.Map_teleport;
 import game.physic.Vector2D;
-import game.pool.MonsterFactory;
-import game.pool.MonsterPool;
-import game.pool.MonsterSpawner;
+import game.pool.*;
 import game.tile.GridCellWrite;
 import game.tile.Map;
 import game.tile.MapParse;
@@ -22,37 +25,86 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class PlayState extends GameState {
+public class PlayState extends GameState implements Observarable {
 
+    // Entity
     private final Player player;
-    Map maps;
     private static List<Monster> activeMonsters;
     private static final MonsterSpawner monsterSpawner = new MonsterSpawner();
+    private static List<NPC> activeNPCs;
+    private static final NPCSpawner npcSpawner = new NPCSpawner();
 
+    // Map
+    private Map maps;
     private static final MapParse mapParse = new MapParse();
     private static Map cachedMap = mapParse.parsing("maps/"+ Map_name[0] +"_1_Layer.xml");
     private Map bufferMap = null;
     private int index = 0;
-    private static Map_teleport[] map_teleport = parseMapTeleport();
+    private static final Map_teleport[] map_teleport = parseMapTeleport();
 
+    // CountDown
     private static int countdown_spawn = 0;
 
-    public PlayState(GameStateManager gsm) {
+    // Event
+    Event bufferEvent = null;
+
+    //observer pattern
+    private static List<Observer> observers = new ArrayList<>();
+
+    // Singleton pattern
+    private static PlayState instance = null;
+
+    private PlayState(GameStateManager gsm) {
         super(gsm);
-        player = new Player(Map_origin[index], GamePanel.Tile_Size * GamePanel.Scale, 64); // scale the player
-        monsterPool = MonsterPool.getInit(15, new MonsterFactory(), player);
+        player = new Player(Map_origin[index], GamePanel.Tile_Size * GamePanel.Scale, 64,this); // scale the player
+        monsterPool = MonsterPool.getInit(25, new MonsterFactory(), player, F_Type_Sprite_Entity.Type1.ordinal());
+        npcPool = NPCPool.getInit(5, new NPCFactory(),F_Type_Sprite_Entity.Type4.ordinal());
         maps = cachedMap;
         GridCellWrite.parseGrid("maps/"+ Map_name[index]+".txt");
         GridCellWrite.setPath(Map_name[index]);
         showMapTeleport();
         activeMonsters = new ArrayList<>();
+        activeNPCs = new ArrayList<>();
+        LoadDataFromEvent(Map_name[index]);
+    }
+
+    public static synchronized PlayState getInit(GameStateManager gsm) {
+        if(instance == null) {
+            instance = new PlayState(gsm);
+        }
+        return instance;
     }
 
     @Override
     public void update() {
         player.update();
         monsterUpdate();
-        countdownSpawn();
+        npcUpdate();
+        sentCoundown();
+    }
+
+    private void LoadDataFromEvent(String event){
+        bufferEvent = GameStateManager.getEvent(event);
+        if(bufferEvent == null) {
+            System.out.println("Event not found");
+            return;
+        }
+
+        int size_monster = bufferEvent.getCapacityMonster();
+        if(size_monster > 0) {
+            List<Vector2D> monsterPosition = bufferEvent.getMonsterSpawnPoints();
+            for (int i = 0; i < size_monster; i++) {
+                monsterSpawner.spawnMonster(monsterPosition.get(i));
+            }
+        }
+        int size_npc = bufferEvent.getCapacityNPC();
+        if(size_npc > 0) {
+            List<Vector2D> npcPosition = bufferEvent.getNpcSpawnPoints();
+            for (int i = 0; i < size_npc; i++) {
+                F_Type_Sprite_Entity temp = bufferEvent.getNpcTypes().get(i);
+                npcSpawner.spawnNPC(npcPosition.get(i), temp);
+            }
+        }
     }
 
     private void monsterUpdate(){
@@ -61,15 +113,38 @@ public class PlayState extends GameState {
         }
     }
 
-    public static void countdownSpawn(){
-        if(countdown_spawn > 0 && OneSecond){
-            countdown_spawn--;
+    private void npcUpdate(){
+        for(NPC npc : activeNPCs){
+            npc.update();
+        }
+    }
+
+    public void sentCoundown(){
+        if(OneSecond) {
+            notifyObservers();
+            countdownSpawn();
             OneSecond = false;
         }
     }
 
+    public void countdownSpawn(){
+        if(countdown_spawn > 0 ){
+            countdown_spawn--;
+            OneSecond = false;
+            System.out.println("Countdown spawn " + countdown_spawn);
+
+        }
+
+    }
+
     @Override
     public void input(MouseHandler mouse, KeyHandler key) {
+        GoNextMapByAdmin(key);
+        GoNextMapByBox(key);
+        player.input(key, mouse);
+    }
+
+    private void GoNextMapByAdmin(KeyHandler key){
         if(key.pause.down) {
             int i = ++index % 5;
             bufferMap = mapParse.parsing("maps/"+ Map_name[i] +"_1_Layer.xml");
@@ -77,13 +152,17 @@ public class PlayState extends GameState {
             GridCellWrite.setPath(Map_name[i]);
             player.setPlayerPosition(Map_origin[i]);
             setMap();
+            clear();
+            LoadDataFromEvent(Map_name[i]);
             try {
                 Thread.sleep(200); // 200 milliseconds delay
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+    }
 
+    private void GoNextMapByBox(KeyHandler key){
         BoxTP temp;
         if(key.nextMap.down){
             temp = PlayState.map_teleport[index % 5].checkCollision(player.getHitbox());
@@ -97,6 +176,8 @@ public class PlayState extends GameState {
                 GridCellWrite.setPath(Map_name[i]);
                 player.setPlayerPosition(temp.getTp_to_position());
                 setMap();
+                clear();
+                LoadDataFromEvent(Map_name[i]);
                 try {
                     Thread.sleep(200); // 200 milliseconds delay
                 } catch (InterruptedException e) {
@@ -104,8 +185,11 @@ public class PlayState extends GameState {
                 }
             }
         }
+    }
 
-        player.input(key, mouse);
+    private void clear(){
+        activeMonsters.clear();
+        activeNPCs.clear();
     }
 
     @Override
@@ -114,12 +198,21 @@ public class PlayState extends GameState {
         Sprite.drawArray(g, font, GamePanel.oldFrameCount + " FPS", new Vector2D(GamePanel.width - 130, GamePanel.height - 50), 32, 32, 16, 0);
         player.render(g);
         monsterRender(g);
+        npcRender(g);
         drawTeleport(g);
     }
 
     public void monsterRender(Graphics2D g){
+        if(activeMonsters == null || activeMonsters.isEmpty()) return;
         for(Monster monster : activeMonsters){
             monster.render(g);
+        }
+    }
+
+    public void npcRender(Graphics2D g){
+        if(activeNPCs == null || activeNPCs.isEmpty()) return;
+        for(NPC npc : activeNPCs){
+            npc.render(g);
         }
     }
 
@@ -159,16 +252,22 @@ public class PlayState extends GameState {
         activeMonsters.add(monster);
     }
 
-    public static Monster removeMonster(Monster monster){
-        Iterator<Monster> iterator = activeMonsters.iterator();
+    public static void removeMonster(Monster monster){
+        activeMonsters.removeIf(temp -> temp.equals(monster));
+    }
+
+    public static void addNPC(NPC npc){
+        activeNPCs.add(npc);
+    }
+
+    public static void removeNPC(NPC npc){
+        Iterator<NPC> iterator = activeNPCs.iterator();
         while(iterator.hasNext()){
-            Monster temp = iterator.next();
-            if(temp.equals(monster)){
+            NPC temp = iterator.next();
+            if(temp.equals(npc)){
                 iterator.remove();
-                return temp;
             }
         }
-        return null;
     }
 
     private static Map_teleport[] parseMapTeleport() {
@@ -215,4 +314,22 @@ public class PlayState extends GameState {
             }
         }
     }
+
+    @Override
+    public void addObserver(Observer observer) {
+        observers.add(observer);
+    }
+
+    @Override
+    public void removeObserver(Observer observer) {
+        observers.remove(observer);
+    }
+
+    @Override
+    public void notifyObservers() {
+        for(Observer observer : observers){
+            observer.update(this);
+        }
+    }
+
 }

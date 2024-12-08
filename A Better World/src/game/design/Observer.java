@@ -2,6 +2,6 @@ package game.design;
 
 import game.entity.Player;
 
-public interface Observer {
-    void update(Player player);
+public interface Observer<T> {
+    void update(T t);
 }

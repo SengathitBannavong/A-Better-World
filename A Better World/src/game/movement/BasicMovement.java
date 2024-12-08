@@ -3,6 +3,7 @@ package game.movement;
 import game.entity.Entity;
 import game.enum_.F_Direction;
 
+// Strategy Pattern
 public class BasicMovement implements MovementStrategy {
 
     private float dx;

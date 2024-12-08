@@ -4,6 +4,7 @@ import game.Debug;
 import game.GamePanel;
 import game.Input.KeyHandler;
 import game.Input.MouseHandler;
+import game.design.Observarable;
 import game.design.Observer;
 import game.enum_.F_Direction;
 import game.enum_.F_List_Animation_Sprite;
@@ -26,7 +27,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-public class Player extends Entity{
+public class Player extends Entity implements Observer<PlayState>, Observarable {
 
     private MovementStrategy movementStrategy;
     private List<Observer> observers = new ArrayList<>();
@@ -39,6 +40,8 @@ public class Player extends Entity{
     private boolean isDash = false;
     private boolean stillDash = false;
     private final float DefaultSpeed = 3f;
+    private final int dashcountdown = 2;
+    private int count_dash_countdown = 0;
 
     GridCellWrite gridCellWrite = new GridCellWrite(GameStateManager.getMapName(1));
 
@@ -54,8 +57,9 @@ public class Player extends Entity{
         return sprite;
     }
 
-    public Player(Vector2D origin,int size ,int sizeSprite) {
+    public Player(Vector2D origin,int size ,int sizeSprite,PlayState playState) {
         super(origin, size, sizeSprite);
+        playState.addObserver(this);
         this.sprite = setDefaultSpite();
         setAnimation(F_Direction.RIGHT, sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(F_Direction.RIGHT.ordinal()), 10);
         camera = new Camera(origin, ((float) GamePanel.width/2 - sizeSprite - GamePanel.Tile_Size) ,((float) GamePanel.height/2 - sizeSprite - GamePanel.Tile_Size), GamePanel.width, GamePanel.height);
@@ -66,7 +70,7 @@ public class Player extends Entity{
     public void update(){
         setupDirectionMovement();
 
-        if(is_dash_update()){// Update the animation dash movement
+        if(is_dash_update() && !IsdashCountDown()){// Update the animation dash movement
             dash_update();
         }else{
             // Update the animation basic movement
@@ -109,6 +113,10 @@ public class Player extends Entity{
             }
         }
         return false;
+    }
+
+    private boolean IsdashCountDown(){
+        return count_dash_countdown > 0;
     }
 
     public void camera_update(){
@@ -171,6 +179,7 @@ public class Player extends Entity{
         }else{
             if(ani.getFrame() == 4){
                 acc -= dashSpeed;
+                count_dash_countdown = dashcountdown;
                 System.out.println("acc sub: "+acc);
             }
         }
@@ -352,14 +361,17 @@ public class Player extends Entity{
         return monsters;
     }
 
+    @Override
     public void addObserver(Observer observer){
         observers.add(observer);
     }
 
+    @Override
     public void removeObserver(Observer observer){
         observers.remove(observer);
     }
 
+    @Override
     public void notifyObservers(){
         for(Observer observer : observers){
             observer.update(this);
@@ -380,4 +392,13 @@ public class Player extends Entity{
             }
         }
     }
+
+    @Override
+    public void update(PlayState playState) {
+        if(count_dash_countdown != 0){
+            System.out.println("Dash countdown: "+count_dash_countdown);
+            count_dash_countdown--;
+        }
+    }
+
 }

@@ -8,6 +8,8 @@ import java.awt.*;
 public abstract class Rectangle {
     protected AABB aabb;
     protected Vector2D position;
+    protected int width;
+    protected int height;
 
     public Rectangle(Vector2D position, int width, int height) {
         this.position = position;
