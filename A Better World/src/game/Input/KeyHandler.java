@@ -54,6 +54,7 @@ public class KeyHandler implements KeyListener {
     public Key nextMap = new Key();
     public Key spawn = new Key();
     public Key despawn = new Key();
+    public Key talking = new Key();
 
     public KeyHandler(GamePanel game){
         game.addKeyListener(this);
@@ -90,6 +91,7 @@ public class KeyHandler implements KeyListener {
             case KeyEvent.VK_Q -> nextMap.toggle(pressed);
             case KeyEvent.VK_I -> spawn.toggle(pressed);
             case KeyEvent.VK_O -> despawn.toggle(pressed);
+            case KeyEvent.VK_C -> talking.toggle(pressed);
         }
     }
 

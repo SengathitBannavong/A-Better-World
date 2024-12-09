@@ -48,6 +48,8 @@ public class PlayState extends GameState implements Observarable {
     // Event
     Event bufferEvent = null;
 
+    // Conversation
+
     //observer pattern
     private static List<Observer> observers = new ArrayList<>();
 

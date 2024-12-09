@@ -20,18 +20,25 @@ import java.util.Stack;
 public class GameStateManager {
 
     private final Stack<GameState> states;
-
-//    public static Flag_GameState PLAY = Flag_GameState.PLAY;
-//    public static Flag_GameState MENU = Flag_GameState.MENU;
-//    public static Flag_GameState PAUSE = Flag_GameState.PAUSE;
-//    public static Flag_GameState GAMEOVER = Flag_GameState.GAMEOVER;
+    private static GameState bufferState = null;
 
     private static Map<String, Event> events;
+
+    // Singleton pattern
+    private static GameStateManager instance = null;
 
     public GameStateManager() {
         states = new Stack<>();
         events = new HashMap<>();
+        instance = this;
         Init();
+    }
+
+    public static synchronized GameStateManager getInstance() {
+        if(instance == null) {
+            instance = new GameStateManager();
+        }
+        return instance;
     }
 
     private void Init(){
@@ -85,21 +92,40 @@ public class GameStateManager {
     }
 
     public void update() {
+        if(bufferState!= null){
+            bufferState.update();
+            return;
+        }
+
         if(!states.isEmpty()){
             states.peek().update();
         }
     }
 
     public void input(MouseHandler mouse, KeyHandler key) {
+        if(key.talking.down){
+            if(bufferState == null){
+                setBufferState("test");
+            }
+        }
+        if(bufferState!= null){
+            bufferState.input(mouse, key);
+            return;
+        }
         if(!states.isEmpty()){
             states.peek().input(mouse, key);
         }
         CollisionHandleInput(key);
+
     }
 
     public void render(Graphics2D g) {
        if(!states.isEmpty()){
            states.peek().render(g);
+       }
+
+       if(bufferState!= null){
+           bufferState.render(g);
        }
     }
 
@@ -149,5 +175,17 @@ public class GameStateManager {
 
     public static String getMapName(int index) {
         return GameState.Map_name[index];
+    }
+
+    public static void setBufferState(String path){
+        bufferState = new DialogConversationState(instance ,path);
+    }
+
+    public static GameState getBufferState(){
+        return bufferState;
+    }
+
+    public static void clearBufferState(){
+        bufferState = null;
     }
 }
