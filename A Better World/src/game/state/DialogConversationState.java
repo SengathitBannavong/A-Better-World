@@ -8,9 +8,11 @@ import game.physic.Vector2D;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +24,8 @@ public class DialogConversationState extends GameState {
     int boxX = 50;
     int boxY = 600;
 
+    private Font font;
+
     private int currentSentenceIndex = 0; // Tracks the current sentence
     private int displayedChars = 0; // Tracks how many characters are displayed for the current sentence
 
@@ -30,12 +34,39 @@ public class DialogConversationState extends GameState {
     private long typingDelay = 50; // Delay between each character in milliseconds
     private long sentenceDelay = 3000; // Delay between sentences in milliseconds
     private boolean isSentenceDelayActive = false;
+    private boolean skipDelay = false;
+
+    private float alpha = 1.0f;
+    private static BufferedImage image = Sprite.loadSprite_("conversation/nah_id_win.jpg");
+    private boolean isSpecialShow = false;
+
+    private float fadeOutAlpha = 1.0f; // Initial alpha value (fully opaque)
+    private boolean isFadingOut = false; // Tracks if fading out is active
+    private long fadeStartTime = 0; // Tracks the start time of the fade-out
+    private long fadeDuration = 2000; // Duration of fade-out in milliseconds
+    private boolean isEndOnetime = false; // Tracks if the end event is triggered
 
     public DialogConversationState(GameStateManager gsm, String path) {
         super(gsm);
         dialogQueue = new ArrayList<>();
         loadSentencesFromFile(path);
         lastUpdateTime = System.currentTimeMillis();
+        getFont();
+    }
+
+    private void getFont()  {
+        InputStream is = getClass().getResourceAsStream("/font/ByteBounce.ttf");
+        if(is == null) {
+            throw new RuntimeException("Font not found");
+        }
+        try {
+            font = Font.createFont(Font.TRUETYPE_FONT, is);
+        } catch (FontFormatException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        font = font.deriveFont(Font.PLAIN, 35);
     }
 
     @Override
@@ -70,14 +101,18 @@ public class DialogConversationState extends GameState {
     @Override
     public void input(MouseHandler mouse, KeyHandler key) {
         // Handle skipping by user input (e.g., pressing a key)
-//        if (key.skip) { // Replace "skip" with the actual key check
-//            skipAnimation();
-//        }
+        if (key.skip.down && !skipDelay) { // Replace "skip" with the actual key check
+            skipDelay = true;
+            skipAnimation();
+        }
     }
 
     @Override
     public void render(Graphics2D g) {
         drawSubWindow(g);
+        if (isSpecialShow) {;
+            SpecialShow(g);
+        }
     }
 
     private void drawSubWindow(Graphics2D g) {
@@ -92,17 +127,60 @@ public class DialogConversationState extends GameState {
 
         g.setColor(Color.WHITE);
         if (currentSentenceIndex < dialogQueue.size()) {
-            Sprite.drawArray(
-                    g,
-                    GameState.font,
-                    dialogQueue.get(currentSentenceIndex).substring(0, displayedChars), // Display partial text
-                    new Vector2D(boxX + 10, boxY + 10),
-                    GamePanel.Tile_Size * 2,
-                    GamePanel.Tile_Size * 2,
-                    20,
-                    0
-            );
+//            Sprite.drawArray(
+//                    g,
+//                    GameState.font,
+//                    dialogQueue.get(currentSentenceIndex).substring(0, displayedChars), // Display partial text
+//                    new Vector2D(boxX + 10, boxY + 10),
+//                    GamePanel.Tile_Size * 2,
+//                    GamePanel.Tile_Size * 2,
+//                    20,
+//                    0
+//            );
+            String currentText = dialogQueue.get(currentSentenceIndex).substring(0, displayedChars);
+            g.setFont(font);
+            g.drawString(currentText, boxX + 20, boxY + 40); // Adjust text position for better alignment
+            String temp = dialogQueue.get(currentSentenceIndex).substring(0, displayedChars);
+            if (temp.equalsIgnoreCase("Player: Nah I'd win") && !isSpecialShow && !isEndOnetime) {
+                isSpecialShow = true;
+                isFadingOut = true;
+                fadeStartTime = System.currentTimeMillis(); // Start the fade timer
+            }
         }
+    }
+
+    private void SpecialShow(Graphics2D g) {
+        if (image == null) {
+            System.out.println("Image is null");
+            return;
+        }
+
+        if (isFadingOut) {
+            // Calculate the elapsed time since fade started
+            long currentTime = System.currentTimeMillis();
+            float elapsedTime = (currentTime - fadeStartTime) / (float) fadeDuration;
+
+            // Update alpha value
+            fadeOutAlpha = Math.max(0, 1.0f - elapsedTime);
+
+            // If fade-out is complete, stop rendering the image
+            if (fadeOutAlpha <= 0) {
+                isSpecialShow = false;
+                isFadingOut = false;
+                isEndOnetime = true;
+                return;
+            }
+        }
+
+        // Set transparency
+        Composite originalComposite = g.getComposite();
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, fadeOutAlpha));
+
+        // Draw the image
+        g.drawImage(image, 500, 100, 500, 500, null);
+
+        // Restore original composite
+        g.setComposite(originalComposite);
     }
 
     private void loadSentencesFromFile(String path) {
@@ -112,7 +190,6 @@ public class DialogConversationState extends GameState {
             int size = Integer.parseInt(data[1]);
             for (int i = 0; i < size; i++) {
                 dialogQueue.add(br.readLine());
-                System.out.println("Dialog: " + dialogQueue.get(i));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -129,6 +206,7 @@ public class DialogConversationState extends GameState {
         }
         displayedChars = 0;
         isFinishOneSentence = false;
+        skipDelay = false;
     }
 
     private void skipAnimation() {

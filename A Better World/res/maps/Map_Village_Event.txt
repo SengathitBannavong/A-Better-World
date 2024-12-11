@@ -7,12 +7,12 @@
 2784 899 Type1
 3006 865 Type1
 9
-1376 1348 Type1
-2207 1632 Type2
-3263 1351 Type3
-1950 672 Type4
-2879 670 Type1
-2622 637 Type2
-2657 480 Type3
-2897 529 Type4
-3360 663 Type1
+1376 1348 Type1 true advise_village
+2207 1632 Type2 true advise_village
+3263 1351 Type3 true advise_village
+1950 672 Type4 true advise_village
+2879 670 Type1 true Leader_village
+2622 637 Type2 true advise_village
+2657 480 Type3 true advise_village
+2897 529 Type4 true advise_village
+3360 663 Type1 true advise_village

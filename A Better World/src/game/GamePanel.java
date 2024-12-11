@@ -2,6 +2,8 @@ package game;
 
 import game.Input.KeyHandler;
 import game.Input.MouseHandler;
+import game.graphic.Sprite;
+import game.physic.Vector2D;
 import game.state.GameState;
 import game.state.GameStateManager;
 
@@ -43,6 +45,7 @@ public class GamePanel extends JPanel implements Runnable {
     public GamePanel(int width, int height) {
         GamePanel.width = width;
         GamePanel.height = height;
+        gameStateManager = null;
         ratio = 0.5f; // height / width =  0.5194805194805194
         setPreferredSize(new Dimension(width, height));
         setFocusable(true);
@@ -66,18 +69,21 @@ public class GamePanel extends JPanel implements Runnable {
         image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
         graphics2D = (Graphics2D) image.getGraphics();
 
+        // render background first
+        graphics2D.drawImage(Window.background.getImage(), 0, 0, width, height, null);
+        draw();
         // Initialize the input
         mouse = new MouseHandler(this);
         key = new KeyHandler(this);
 
         // GameStateManager
-        gameStateManager = new GameStateManager();
+        new Thread(() -> gameStateManager = new GameStateManager()).start();
     }
 
     @Override
     public void run() {
         init();
-
+        System.out.println("GamePanel running...");
         final double GAME_HERTZ = 60.0;
         // 16.666666666666668 ms
         final double TBU = 1_000_000_000 / GAME_HERTZ; // Time before update
@@ -104,6 +110,19 @@ public class GamePanel extends JPanel implements Runnable {
         double now;
         int updateCount, renderCount, thisSecond;
         while (running) {
+            // Wait for GameStateManager to be ready
+            if (gameStateManager == null) {
+                Thread.onSpinWait();
+                graphics2D.drawImage(Window.background.getImage(), 0, 0, width, height, null);
+                Vector2D vector2D = new Vector2D(((float) width / 2)+150, (float) height / 2);
+                Sprite.drawArray(graphics2D,Window.font ,"Loading...",vector2D, 32, 32, 32, 0);
+                draw();
+                lastSecondTime = (int) (lastUpdateTime / 1_000_000_000);
+                lastUpdateTime = System.nanoTime();
+                lastRenderTime = System.nanoTime();
+                continue; // Skip the loop until gameStateManager is ready
+            }
+
             now = System.nanoTime();
             deltaUpdate += (now - lastUpdateTime) / TBU;
             deltaRender += (now - lastRenderTime) / TBR;

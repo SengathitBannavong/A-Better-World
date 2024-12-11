@@ -32,7 +32,7 @@ public class BoxConversation extends Rectangle implements Observer<NPC> {
     }
 
     @Override
-    public void update(NPC npc) {
+    public void updateListener(NPC npc) {
 
     }
 }

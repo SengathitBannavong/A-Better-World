@@ -67,6 +67,16 @@ public class Sprite {
         return sprite;
     }
 
+    public static BufferedImage loadSprite_(String file){
+        BufferedImage sprite = null;
+        try {
+            sprite = ImageIO.read(Sprite.class.getClassLoader().getResourceAsStream(file));
+        } catch (Exception e) {
+            System.err.println("Error: Could not load sprite.");
+        }
+        return sprite;
+    }
+
     public void loadSpriteArray() {
         spriteArray = new BufferedImage[hSprite][wSprite];
 

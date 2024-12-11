@@ -13,6 +13,8 @@ public class Event {
     private String tag;
     private List<Vector2D> monsterSpawnPoints, npcSpawnPoints;
     private List<F_Type_Sprite_Entity> monsterTypes, npcTypes;
+    private List<Boolean> isCanTalk_NPC;
+    private List<String> path_NPC;
     private int capacityMonster, capacityNPC;
     private boolean IsEnd = false;
 
@@ -22,6 +24,8 @@ public class Event {
         this.npcSpawnPoints = new ArrayList<>();
         this.monsterTypes = new ArrayList<>();
         this.npcTypes = new ArrayList<>();
+        this.isCanTalk_NPC = new ArrayList<>();
+        this.path_NPC = new ArrayList<>();
         LoadData();
     }
 
@@ -89,6 +93,14 @@ public class Event {
         this.capacityNPC = capacityNPC;
     }
 
+    public List<Boolean> getIsCanTalk_NPC() {
+        return isCanTalk_NPC;
+    }
+
+    public List<String> getPath_NPC() {
+        return path_NPC;
+    }
+
     private void LoadData(){
         // Load data from file
         System.out.print("Loading data from file " + tag);
@@ -108,10 +120,35 @@ public class Event {
             System.out.println(" sizeNpc: " + size);
             this.capacityNPC = size;
             if(size != 0) {
-                GetData(br, size, npcSpawnPoints, npcTypes); // read NpcSpawnPoints
+                GetDataNPC(br, size, npcSpawnPoints, npcTypes,isCanTalk_NPC,path_NPC); // read NpcSpawnPoints
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private void GetDataNPC(BufferedReader br, int size, List<Vector2D> npcSpawnPoints, List<F_Type_Sprite_Entity> npcTypes, List<Boolean> isCanTalkNpc, List<String> pathNpc) throws IOException {
+        String line;
+        for(int i = 1; i <= size; i++){
+            // get next line
+            line = br.readLine();
+            String[] parts = line.split(" ");// x y type example: 100 100 Type1
+            float x = Float.parseFloat(parts[0]);
+            float y = Float.parseFloat(parts[1]);
+            F_Type_Sprite_Entity type = F_Type_Sprite_Entity.valueOf(parts[2]);
+            boolean isCanTalk = Boolean.parseBoolean(parts[3]); // data like this: 100 100 Type1 true
+            if(isCanTalk){
+                String path = parts[4];
+                System.out.println("Path: " + path);
+                isCanTalkNpc.add(true);
+                pathNpc.add(path);
+            }else{
+                isCanTalkNpc.add(false);
+                pathNpc.add("");
+            }
+            Vector2D temp = new Vector2D(x, y);
+            npcSpawnPoints.add(temp);
+            npcTypes.add(type);
         }
     }
 
@@ -129,6 +166,8 @@ public class Event {
             npcTypes.add(type);
         }
     }
+
+
 
     public boolean isEnd() {
         return IsEnd;

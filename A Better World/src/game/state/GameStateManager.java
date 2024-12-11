@@ -103,11 +103,11 @@ public class GameStateManager {
     }
 
     public void input(MouseHandler mouse, KeyHandler key) {
-        if(key.talking.down){
-            if(bufferState == null){
-                setBufferState("test");
-            }
-        }
+//        if(key.talking.down){
+//            if(bufferState == null && Debug.debugging){
+//                setBufferState("test");
+//            }
+//        }
         if(bufferState!= null){
             bufferState.input(mouse, key);
             return;
@@ -185,7 +185,7 @@ public class GameStateManager {
         return bufferState;
     }
 
-    public static void clearBufferState(){
+    public void clearBufferState(){
         bufferState = null;
     }
 }

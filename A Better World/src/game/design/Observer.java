@@ -1,7 +1,5 @@
 package game.design;
 
-import game.entity.Player;
-
 public interface Observer<T> {
-    void update(T t);
+    void updateListener(T t);
 }

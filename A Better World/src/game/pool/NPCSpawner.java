@@ -5,6 +5,7 @@ import game.enum_.F_Type_Sprite_Entity;
 import game.physic.Vector2D;
 import game.state.PlayState;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class NPCSpawner {
@@ -24,10 +25,11 @@ public class NPCSpawner {
     }
 
     public void despawnNPC(List<NPC> npcs) {
-        for(NPC npc : npcs) {
+        for(NPC npc : new ArrayList<>(npcs)) {
             npc.deactivate();
-            PlayState.removeNPC(npc);
             NPCPool.instance.returnNPC(npc, npc.getType());
+            PlayState.removeNPC(npc);
+            npcs.remove(npc);
         }
 
     }

@@ -10,6 +10,7 @@ import game.graphic.Sprite;
 import game.physic.Vector2D;
 import game.pool.IPoolable;
 import game.state.GameState;
+import game.state.GameStateManager;
 
 import java.awt.*;
 
@@ -17,6 +18,8 @@ public class NPC extends Entity implements IPoolable {
 
     private boolean active;
     private F_Type_Sprite_Entity type;
+    private boolean CanTalk = false;
+    private String path_conversation = null;
 
     private Sprite[] setDefaultSpite(){
         Sprite[] sprite = new Sprite[F_List_Animation_Sprite.SIZE.ordinal()];
@@ -102,5 +105,35 @@ public class NPC extends Entity implements IPoolable {
 
     public F_Type_Sprite_Entity getType() {
         return type;
+    }
+
+    public void setCanTalk(boolean CanTalk) {
+        this.CanTalk = CanTalk;
+        if(CanTalk) {
+            System.out.println("NPC Can talk: " + CanTalk);
+        }
+    }
+
+    public boolean getCanTalk() {
+        return CanTalk;
+    }
+
+    public void setPathConversation(String path_conversation) {
+        this.path_conversation = path_conversation;
+        if(!path_conversation.isEmpty()) {
+            System.out.println("NPC Path conversation: " + path_conversation);
+        }
+    }
+
+    public String getPathConversation() {
+        return path_conversation;
+    }
+
+    public void Talking() {
+        if(path_conversation == null || path_conversation.isEmpty()) {
+            System.err.println("Error: NPC conversation path is not set. + " + path_conversation);
+            return;
+        }
+        GameStateManager.setBufferState(path_conversation);
     }
 }

@@ -2,6 +2,7 @@ package game.entity;
 
 import game.Debug;
 import game.GamePanel;
+import game.design.Observer;
 import game.enum_.F_Direction;
 import game.enum_.F_List_Animation_Sprite;
 import game.enum_.F_Type_Sprite_Entity;
@@ -10,16 +11,21 @@ import game.graphic.Sprite;
 import game.physic.Vector2D;
 import game.pool.IPoolable;
 import game.state.GameState;
+import game.state.PlayState;
 
 import java.awt.*;
 
-public class Monster extends Entity implements IPoolable {
+public class Monster extends Entity implements IPoolable, Observer<PlayState> {
 
-    private boolean active;
+    protected boolean active;
     private static int count  = 0;
     private int id;
 
     private MonsterAI ai;
+    private int damageTaken;
+    private boolean damageTakenGate = false;
+    // y offset for animation falling down
+    private int yOffset = 0;
 
     private Sprite[] setDefaultSpite(){
         Sprite[] sprite = new Sprite[F_List_Animation_Sprite.SIZE.ordinal()];
@@ -53,6 +59,8 @@ public class Monster extends Entity implements IPoolable {
         setAnimation(F_Direction.RIGHT, sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(F_Direction.LEFT.ordinal()), 10);
         id = count++;
         ai = new MonsterAI(this, player);
+        PlayState.getInstance().addObserver(this);
+        Init();
     }
 
     public Monster(Vector2D origin, int size, int sizeSprite) {
@@ -60,6 +68,30 @@ public class Monster extends Entity implements IPoolable {
         this.sprite = setDefaultSpite();
         active = false;
         setAnimation(F_Direction.RIGHT, sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(F_Direction.UP.ordinal()), 10);
+    }
+
+    private void Init(){
+        maxHp = 3;
+        hp = maxHp;
+        maxDamage = 2;
+        damage = 1;
+    }
+
+    public void takeDamage(int damage){
+        if(immortality) return;
+        hp -= damage;
+        damageTaken = damage;
+        damageTakenGate = true;
+        System.out.println("Monster taken damage:"+damage+"current hp is:" + hp);
+        if(hp <= 0){
+            deactivate();
+        }
+        immortality = true;
+        countdownImmortality = timeCountdownImmortality;
+    }
+
+    public void InitHp(){
+        hp = maxHp;
     }
 
     public void update(){
@@ -83,11 +115,25 @@ public class Monster extends Entity implements IPoolable {
 
     @Override
     public void render(Graphics2D g) {
-        if(!active) return;
         int renderX = (int)(origin.x - Camera.getWorldX());
         int renderY = (int)(origin.y - Camera.getWorldY());
+        if(damageTakenGate){
+            Sprite.drawArray(g, GameState.font, "-"+damageTaken, new Vector2D(renderX + 10, renderY +5 + yOffset++), 32, 32, 16, 0);
+            if(yOffset > 10){
+                yOffset = 0;
+                damageTakenGate = false;
+            }
+        }
+        if(!active) return;
+
         int rendersize = size * GamePanel.Zoom;
         g.drawImage(ani.getImage(),renderX, renderY,rendersize,rendersize, null);
+        // render damage taken
+
+
+        if(immortality){
+            Sprite.drawArray(g, GameState.font, "Important", new Vector2D(renderX, renderY - 10), 16, 16, 16, 0);
+        }
         if(Debug.debugging){
             renderDebug(g, renderX, renderY);
             ai.render(g);
@@ -128,5 +174,15 @@ public class Monster extends Entity implements IPoolable {
 
     public int getId(){
         return id;
+    }
+
+    @Override
+    public void updateListener(PlayState playState) {
+        if(countdownImmortality > 0) {
+            countdownImmortality--;
+            if(countdownImmortality <= 0){
+                immortality = false;
+            }
+        }
     }
 }

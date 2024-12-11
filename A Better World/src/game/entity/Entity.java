@@ -16,6 +16,17 @@ public abstract class Entity extends BaseGameObject {
 
     protected boolean[] movement_dir;
 
+    // Abilities
+    protected int hp;
+    protected int maxHp;
+    protected int damage;
+    protected int maxDamage;
+    protected boolean immortality = false;
+    protected final int timeCountdownImmortality = 1;
+    protected int countdownImmortality = 0;
+    protected boolean isHurt = false;
+    protected boolean stillHurt = false;
+
     public Entity(Vector2D origin, int size,int sizeSprite) {
         super(origin,size,sizeSprite);
         movement_dir = new boolean[F_Direction.SIZE.ordinal()];
@@ -30,16 +41,33 @@ public abstract class Entity extends BaseGameObject {
                 animation_attack();
                 break;
             case 2:// Dead
-                //animation_attack();
-                break;
-            case 3:// Hurt
                 //animation_dead();
                 break;
-            case 4:// Dead
-                //animation_hurt();
+            case 3:// Hurt
+                animation_hurt();
+                break;
+            default: // Basic Movement
+                animation_basic_movement();
                 break;
         }
 
+    }
+
+    private void animation_hurt() {
+        if(!stillHurt) {
+            setAnimation(currentDirection, sprite[F_List_Animation_Sprite.Hurt.ordinal()].getSpriteArray(currentDirection.ordinal()), 4);
+            stillHurt = true;
+        }
+
+        if(ani.getFrame() == ani.getNumFrames() - 1){
+            System.out.println("Hurt done");
+            isHurt = false;
+            stillHurt = false;
+            statueAnimate = F_Statue_Animate.BasicMovement;
+            ani.setFrames(sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(currentDirection.ordinal()));
+            ani.setDelay(12);
+            isMoving = false;
+        }
     }
 
     public void animation_basic_movement(){
@@ -186,4 +214,13 @@ public abstract class Entity extends BaseGameObject {
     public Vector2D getOrigin() {return origin;}
 
     public void setIsMoving(boolean isMoving) {this.isMoving = isMoving;}
+
+    public int getAttackDemage(){
+        //random damge between damage and maxDamage
+        return (int)(Math.random() * (maxDamage - damage + 1) + damage);
+    }
+
+    public int getHp(){
+        return hp;
+    }
 }

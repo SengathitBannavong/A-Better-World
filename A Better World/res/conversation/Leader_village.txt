@@ -1,0 +1,26 @@
+size:25
+NPC:Thanks my hero
+NPC: I think i will died here
+NPC: But you save me
+Player: what happen?
+NPC: It have Boss in the dungeon
+NPC: It call "The Dark Lord"
+NPC: He is so strong
+NPC: He tell monster to kill my village
+NPC: Please help us
+NPC: You can go left, and you will see arched door
+NPC: you go follow the path
+NPC: you will see many state of monster
+NPC: Please be careful
+NPC: And you will see the dungeon
+NPC: Finally, you will see the Dark Lord
+NPC: He have special skill
+NPC: Can you help me?
+Player: Yes of course, i will beat him
+NPC: Can i ask you something?
+Player: Yes, what do you want to know?
+NPC: Who's stronger? Him or You?
+Player: Well if He regained all his power
+Player: He might cause me a little trouble
+NPC: But would you lose?
+Player: Nah I'd win

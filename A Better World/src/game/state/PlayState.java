@@ -11,9 +11,12 @@ import game.entity.Player;
 import game.enum_.F_Type_Sprite_Entity;
 import game.enum_.Map_Index_Teleport;
 import game.event.Event;
+import game.event.EventManager;
+import game.graphic.RenderQueue;
 import game.graphic.Sprite;
 import game.object.BoxTP;
 import game.object.Map_teleport;
+import game.physic.AABB;
 import game.physic.Vector2D;
 import game.pool.*;
 import game.tile.GridCellWrite;
@@ -25,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class PlayState extends GameState implements Observarable {
+public class PlayState extends GameState implements Observarable, EventManager.EventListener {
 
     // Entity
     private final Player player;
@@ -50,6 +53,9 @@ public class PlayState extends GameState implements Observarable {
 
     // Conversation
 
+    // Render
+    private final RenderQueue renderQueue;
+
     //observer pattern
     private static List<Observer> observers = new ArrayList<>();
 
@@ -58,7 +64,8 @@ public class PlayState extends GameState implements Observarable {
 
     private PlayState(GameStateManager gsm) {
         super(gsm);
-        player = new Player(Map_origin[index], GamePanel.Tile_Size * GamePanel.Scale, 64,this); // scale the player
+        instance = this;
+        player = Player.getInstance(Map_origin[index], GamePanel.Tile_Size * GamePanel.Scale, 64,this); // scale the player
         monsterPool = MonsterPool.getInit(25, new MonsterFactory(), player, F_Type_Sprite_Entity.Type1.ordinal());
         npcPool = NPCPool.getInit(5, new NPCFactory(),F_Type_Sprite_Entity.Type4.ordinal());
         maps = cachedMap;
@@ -68,12 +75,18 @@ public class PlayState extends GameState implements Observarable {
         activeMonsters = new ArrayList<>();
         activeNPCs = new ArrayList<>();
         LoadDataFromEvent(Map_name[index]);
+        renderQueue = new RenderQueue();
+        EventManager.addListener(this);
     }
 
     public static synchronized PlayState getInit(GameStateManager gsm) {
         if(instance == null) {
             instance = new PlayState(gsm);
         }
+        return instance;
+    }
+
+    public static synchronized PlayState getInstance() {
         return instance;
     }
 
@@ -102,9 +115,15 @@ public class PlayState extends GameState implements Observarable {
         int size_npc = bufferEvent.getCapacityNPC();
         if(size_npc > 0) {
             List<Vector2D> npcPosition = bufferEvent.getNpcSpawnPoints();
+            List<Boolean> npcCanTalk = bufferEvent.getIsCanTalk_NPC();
+            List<String> npcPath = bufferEvent.getPath_NPC();
             for (int i = 0; i < size_npc; i++) {
                 F_Type_Sprite_Entity temp = bufferEvent.getNpcTypes().get(i);
+                boolean canTalk = npcCanTalk.get(i);
+                String path = npcPath.get(i);
                 npcSpawner.spawnNPC(npcPosition.get(i), temp);
+                activeNPCs.get(i).setCanTalk(canTalk);
+                activeNPCs.get(i).setPathConversation(path);
             }
         }
     }
@@ -132,7 +151,6 @@ public class PlayState extends GameState implements Observarable {
     public void countdownSpawn(){
         if(countdown_spawn > 0 ){
             countdown_spawn--;
-            OneSecond = false;
             System.out.println("Countdown spawn " + countdown_spawn);
 
         }
@@ -144,6 +162,9 @@ public class PlayState extends GameState implements Observarable {
         GoNextMapByAdmin(key);
         GoNextMapByBox(key);
         player.input(key, mouse);
+        if(key.test.down){
+            EventManager.triggerEvent("PlayerGetHit", 1);
+        }
     }
 
     private void GoNextMapByAdmin(KeyHandler key){
@@ -190,17 +211,22 @@ public class PlayState extends GameState implements Observarable {
     }
 
     private void clear(){
-        activeMonsters.clear();
-        activeNPCs.clear();
+        despawnMonster(activeMonsters);
+        despawnNPC(activeNPCs);
     }
 
     @Override
     public void render(Graphics2D g) {
         maps.drawMap(g, Player.getCamera());
         Sprite.drawArray(g, font, GamePanel.oldFrameCount + " FPS", new Vector2D(GamePanel.width - 130, GamePanel.height - 50), 32, 32, 16, 0);
+        for (Monster monster : activeMonsters) {
+            renderQueue.addToQueue(monster);
+        }
+        for (NPC npc : activeNPCs) {
+            renderQueue.addToQueue(npc);
+        }
+        renderQueue.render(g);
         player.render(g);
-        monsterRender(g);
-        npcRender(g);
         drawTeleport(g);
     }
 
@@ -237,6 +263,7 @@ public class PlayState extends GameState implements Observarable {
     public static List<Monster> getActiveMonsters(){
         return activeMonsters;
     }
+    public static List<NPC> getActiveNPCs(){return activeNPCs;}
 
     public static void spawnMonster(Vector2D position){
         if(countdown_spawn == 0){
@@ -249,6 +276,7 @@ public class PlayState extends GameState implements Observarable {
     public static void despawnMonster(List<Monster> monsters){
         monsterSpawner.despawnMonster(monsters);
     }
+    public static void despawnNPC(List<NPC> npcs){npcSpawner.despawnNPC(npcs);}
 
     public static void addMonster(Monster monster){
         activeMonsters.add(monster);
@@ -330,8 +358,32 @@ public class PlayState extends GameState implements Observarable {
     @Override
     public void notifyObservers() {
         for(Observer observer : observers){
-            observer.update(this);
+            observer.updateListener(this);
         }
     }
 
+    @Override
+    public void onEvent(String eventName, Object... args) {
+        switch (eventName){
+            case "PlayerAttack":
+                AABB attackBox = (AABB) args[0];
+                List<Monster> deadMonsters = new ArrayList<>();
+                for(Monster monster : activeMonsters){
+                    if(monster.getHitbox().collides(attackBox)){
+                        monster.takeDamage(player.getAttackDemage());
+                        if(monster.getHp() <= 0){
+                           monster.deactivate();
+                            deadMonsters.add(monster);
+                        }
+                    }
+                }
+                despawnMonster(deadMonsters);
+                break;
+            case "PlayerGetHit":
+                player.takeDamage((int) args[0]);
+                break;
+            default:
+                break;
+        }
+    }
 }

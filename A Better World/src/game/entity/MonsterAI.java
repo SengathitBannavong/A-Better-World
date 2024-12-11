@@ -4,9 +4,11 @@ import game.Debug;
 import game.GamePanel;
 import game.design.Observer;
 import game.enum_.F_Direction;
+import game.event.EventManager;
 import game.movement.BasicMovement;
 import game.movement.MovementStrategy;
 import game.physic.Vector2D;
+import game.state.PlayState;
 
 import java.awt.*;
 import java.awt.geom.Line2D;
@@ -21,12 +23,12 @@ public class MonsterAI implements Observer<Player> {
 
     public MonsterAI(Monster monster, Player player) {
         this.monster = monster;
-        player.addObserver(this);
         movementStrategy = new BasicMovement();
+        player.addObserver(this);
     }
 
     @Override
-    public void update(Player player) {
+    public void updateListener(Player player) {
         lastPlayerPosition = player.getOrigin();
         lastPlayerPosition = lastPlayerPosition.add(new Vector2D(136, 136));
     }
@@ -83,9 +85,9 @@ public class MonsterAI implements Observer<Player> {
 
     private boolean playerInRange() {
         if(Debug.debugging){
-           // System.out.println("Player distance: " + monster.getOrigin().distance(lastPlayerPosition));
+           System.out.println("Player distance: " + monster.getOrigin().distance(lastPlayerPosition));
         }
-        return monster.getOrigin().distance(lastPlayerPosition) < 1;
+        return monster.getOrigin().distance(lastPlayerPosition) < 250;
     }
 
     private void chasePlayer(){
@@ -119,6 +121,7 @@ public class MonsterAI implements Observer<Player> {
 
     public void render(Graphics2D g){
         // Draw line of sight
+        if(monsterPosition == null || lastPlayerPosition == null) return;
         g.setColor(Color.BLUE);
         g.setStroke(new BasicStroke(2));
         g.draw(new Line2D.Double(monsterPosition.getWorldVar().x, monsterPosition.getWorldVar().y, lastPlayerPosition.getWorldVar().x, lastPlayerPosition.getWorldVar().y));

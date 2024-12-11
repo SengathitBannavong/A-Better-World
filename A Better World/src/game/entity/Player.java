@@ -9,6 +9,8 @@ import game.design.Observer;
 import game.enum_.F_Direction;
 import game.enum_.F_List_Animation_Sprite;
 import game.enum_.F_Statue_Animate;
+import game.event.Event;
+import game.event.EventManager;
 import game.graphic.Camera;
 import game.graphic.Sprite;
 import game.movement.BasicMovement;
@@ -30,10 +32,9 @@ import java.util.List;
 public class Player extends Entity implements Observer<PlayState>, Observarable {
 
     private MovementStrategy movementStrategy;
-    private List<Observer> observers = new ArrayList<>();
+    private final List<Observer> observers = new ArrayList<>(); // List of observers to notify player position
     private static Camera camera;
 
-    // Optimize this to Dash class
     // Dash Movement
     private boolean dashPrssed = false;
     private final float dashSpeed = 1.5f;
@@ -42,6 +43,9 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
     private final float DefaultSpeed = 3f;
     private final int dashcountdown = 2;
     private int count_dash_countdown = 0;
+
+    // Hitbox Sword
+    private AABB playerSwordHitbox;
 
     GridCellWrite gridCellWrite = new GridCellWrite(GameStateManager.getMapName(1));
 
@@ -57,14 +61,33 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
         return sprite;
     }
 
-    public Player(Vector2D origin,int size ,int sizeSprite,PlayState playState) {
+    // make Player class singleton
+    private static Player instance = null;
+
+    private Player(Vector2D origin,int size ,int sizeSprite,PlayState playState) {
         super(origin, size, sizeSprite);
-        playState.addObserver(this);
+        playState.addObserver(this); // Add observer to PlayState for update dash countdown
         this.sprite = setDefaultSpite();
         setAnimation(F_Direction.RIGHT, sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(F_Direction.RIGHT.ordinal()), 10);
         camera = new Camera(origin, ((float) GamePanel.width/2 - sizeSprite - GamePanel.Tile_Size) ,((float) GamePanel.height/2 - sizeSprite - GamePanel.Tile_Size), GamePanel.width, GamePanel.height);
         super.setHitbox(origin,(sizeSprite / 2) * GamePanel.Zoom , (sizeSprite / 2) * GamePanel.Zoom);
         movementStrategy = new BasicMovement();
+        playerSwordHitbox = new AABB(origin.add(new Vector2D(4,4)),(sizeSprite / 2) * GamePanel.Zoom , (sizeSprite / 2) * GamePanel.Zoom);
+        Init();
+    }
+
+    public static Player getInstance(Vector2D origin,int size ,int sizeSprite,PlayState playState){
+        if(instance == null){
+            instance = new Player(origin, size, sizeSprite, playState);
+        }
+        return instance;
+    }
+
+    private void Init(){
+        maxHp = 10;
+        hp = maxHp;
+        maxDamage = 2;
+        damage = 1;
     }
 
     public void update(){
@@ -78,10 +101,51 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
         }
 
         camera_update();
+        updatePlayerSwordHitboxPosition();
+        updateHandlePlayerAttack();
         hitbounds_update();
         checkMapBoundaries();
         notifyObservers();
     }
+
+    private void updatePlayerSwordHitboxPosition() {
+        int offsetX = 0, offsetY = 0;
+        int hitboxSize = sizeSprite * GamePanel.Zoom;
+
+        if (currentDirection == F_Direction.UP) {
+            offsetX = -64 * GamePanel.Zoom;
+            offsetY = -76 * GamePanel.Zoom;
+        } else if (currentDirection == F_Direction.DOWN) {
+            offsetX = -64 * GamePanel.Zoom;
+            offsetY = -48 * GamePanel.Zoom;
+        } else if (currentDirection == F_Direction.LEFT) {
+            offsetX = -90 * GamePanel.Zoom;
+            offsetY = -64 * GamePanel.Zoom;
+        } else if (currentDirection == F_Direction.RIGHT) {
+            offsetX = -36 * GamePanel.Zoom;
+            offsetY = -64 * GamePanel.Zoom;
+        }
+        playerSwordHitbox.setBox(origin.add(new Vector2D(offsetX, offsetY)), hitboxSize, hitboxSize);
+    }
+
+    private void updateHandlePlayerAttack(){
+        if(stillAttack && ani.getFrame() == 2) {
+            EventManager.triggerEvent("PlayerAttack",playerSwordHitbox);
+        }
+    }
+
+    public void takeDamage(int damage){
+        if(immortality) return;
+        hp -= damage;
+        isHurt = true;
+        System.out.println("Player taken damage:"+damage+"current hp is:" + hp);
+        if(hp <= 0){
+            System.out.println("Player died\n");
+        }
+        immortality = true;
+        countdownImmortality = timeCountdownImmortality;
+    }
+
 
     private void checkMapBoundaries() {
         // check the map boundaries
@@ -158,9 +222,29 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
         int renderY = (int)(origin.y - Camera.getWorldY());
         int rendersize = size * GamePanel.Zoom;
         g.drawImage(ani.getImage(),renderX, renderY,rendersize,rendersize, null);
+        renderNpcSpeak(g);
         if(Debug.debugging) {
             renderDebug(g, renderX, renderY);
             drawGridAroundPlayer(g);
+            renderPlayerSwortHitbox(g);
+        }
+    }
+
+    private void renderPlayerSwortHitbox(Graphics2D g){
+        if(stillAttack && ani.getFrame() >= 2) {
+            playerSwordHitbox.render(g);
+        }
+    }
+
+    private void renderNpcSpeak(Graphics2D g){
+        List<NPC> npcs = getNPCsAroundPlayer();
+        if(!npcs.isEmpty()){
+            for(NPC npc : npcs){
+                if(!npc.getCanTalk())continue;
+                int renderX = (int)(npc.getOrigin().x - Camera.getWorldX());
+                int renderY = (int)(npc.getOrigin().y - Camera.getWorldY());
+                Sprite.drawArray(g, GameState.font, "Press C To Talk", new Vector2D(renderX, renderY - 10), 32, 32, 20, 0);
+            }
         }
     }
 
@@ -230,6 +314,11 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
             }
         }
 
+        if(isHurt){
+            statueAnimate = F_Statue_Animate.Hurt;
+            setFlase();
+        }
+
         if(key.write.down){
             System.out.println("Write");
             GridCellWrite.writeGrid();
@@ -261,6 +350,16 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
 
         if (key.despawn.down) {
             PlayState.despawnMonster(getMonstersAroundPlayer());
+        }
+
+        if(key.talking.down){
+            List<NPC> npcs = getNPCsAroundPlayer();
+            if(!npcs.isEmpty()){
+                for(NPC npc : npcs){
+                    if(!npc.getCanTalk())continue;
+                    npc.Talking();
+                }
+            }
         }
     }
 
@@ -361,6 +460,18 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
         return monsters;
     }
 
+    private LinkedList<NPC> getNPCsAroundPlayer(){
+        LinkedList<NPC> npcs = new LinkedList<>();
+        for(NPC npc : PlayState.getActiveNPCs()){
+            if(npc.isActive()){
+                if(hitbox.collides(npc.getHitbox())){
+                    npcs.add(npc);
+                }
+            }
+        }
+        return npcs;
+    }
+
     @Override
     public void addObserver(Observer observer){
         observers.add(observer);
@@ -374,7 +485,7 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
     @Override
     public void notifyObservers(){
         for(Observer observer : observers){
-            observer.update(this);
+            observer.updateListener(this);
         }
     }
 
@@ -394,11 +505,16 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
     }
 
     @Override
-    public void update(PlayState playState) {
+    public void updateListener(PlayState playState) {
         if(count_dash_countdown != 0){
             System.out.println("Dash countdown: "+count_dash_countdown);
             count_dash_countdown--;
         }
+        if(countdownImmortality > 0) {
+            countdownImmortality--;
+            if(countdownImmortality <= 0){
+                immortality = false;
+            }
+        }
     }
-
 }
