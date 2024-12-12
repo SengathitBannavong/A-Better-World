@@ -16,3 +16,8 @@
 2657 480 Type3 true advise_village
 2897 529 Type4 true advise_village
 3360 663 Type1 true advise_village
+4
+2560 1420 Type1
+1250 1650 Type2
+3600 1400 Type2
+4421 1520 Type3

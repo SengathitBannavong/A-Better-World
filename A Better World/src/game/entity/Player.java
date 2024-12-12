@@ -4,6 +4,7 @@ import game.Debug;
 import game.GamePanel;
 import game.Input.KeyHandler;
 import game.Input.MouseHandler;
+import game.design.DemageFrame;
 import game.design.Observarable;
 import game.design.Observer;
 import game.enum_.F_Direction;
@@ -29,7 +30,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-public class Player extends Entity implements Observer<PlayState>, Observarable {
+public class Player extends Entity implements Observer<PlayState>, Observarable , DemageFrame {
 
     private MovementStrategy movementStrategy;
     private final List<Observer> observers = new ArrayList<>(); // List of observers to notify player position
@@ -46,6 +47,9 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
 
     // Hitbox Sword
     private AABB playerSwordHitbox;
+
+    // HP UI
+    Sprite hpUI = new Sprite("player/hp_ui.png", 128, 128);
 
     GridCellWrite gridCellWrite = new GridCellWrite(GameStateManager.getMapName(1));
 
@@ -83,7 +87,7 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
         return instance;
     }
 
-    private void Init(){
+    public void Init(){
         maxHp = 10;
         hp = maxHp;
         maxDamage = 2;
@@ -91,6 +95,14 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
     }
 
     public void update(){
+        if(stillDead){
+            super.update();
+            return;
+        }
+        if(isDied){
+            isDied = false;
+            EventManager.triggerEvent("PlayerDead");
+        }
         setupDirectionMovement();
 
         if(is_dash_update() && !IsdashCountDown()){// Update the animation dash movement
@@ -102,7 +114,7 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
 
         camera_update();
         updatePlayerSwordHitboxPosition();
-        updateHandlePlayerAttack();
+        onframeDamage(2,3);
         hitbounds_update();
         checkMapBoundaries();
         notifyObservers();
@@ -128,11 +140,6 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
         playerSwordHitbox.setBox(origin.add(new Vector2D(offsetX, offsetY)), hitboxSize, hitboxSize);
     }
 
-    private void updateHandlePlayerAttack(){
-        if(stillAttack && ani.getFrame() == 2) {
-            EventManager.triggerEvent("PlayerAttack",playerSwordHitbox);
-        }
-    }
 
     public void takeDamage(int damage){
         if(immortality) return;
@@ -140,10 +147,15 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
         isHurt = true;
         System.out.println("Player taken damage:"+damage+"current hp is:" + hp);
         if(hp <= 0){
+            Dead();
             System.out.println("Player died\n");
         }
         immortality = true;
         countdownImmortality = timeCountdownImmortality;
+    }
+
+    public void Dead() {
+        isDead = true;
     }
 
 
@@ -221,13 +233,28 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
         int renderX = (int)(origin.x - Camera.getWorldX());
         int renderY = (int)(origin.y - Camera.getWorldY());
         int rendersize = size * GamePanel.Zoom;
+        if(immortality){
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+        }
         g.drawImage(ani.getImage(),renderX, renderY,rendersize,rendersize, null);
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
         renderNpcSpeak(g);
         if(Debug.debugging) {
             renderDebug(g, renderX, renderY);
             drawGridAroundPlayer(g);
             renderPlayerSwortHitbox(g);
         }
+    }
+
+    private int getIndexHpUi(int index){
+        return 10 - index;
+    }
+
+    public void renderUI(Graphics2D g){
+        int index = getIndexHpUi(hp);
+        if(index < 0) index = 0;
+        if(index > 10) index = 10;
+        g.drawImage(hpUI.getSprite(index,0), -30, -140, 384, 384, null);
     }
 
     private void renderPlayerSwortHitbox(Graphics2D g){
@@ -319,6 +346,11 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
             setFlase();
         }
 
+        if(isDead){
+            statueAnimate = F_Statue_Animate.Dead;
+            setFlase();
+        }
+
         if(key.write.down){
             System.out.println("Write");
             GridCellWrite.writeGrid();
@@ -396,11 +428,13 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
             if(!stillDash){
                 setAnimation(currentDirection, sprite[F_List_Animation_Sprite.Dash.ordinal()].getSpriteArray(currentDirection.ordinal()), 6);
                 stillDash = true;
+                immortality = true;
             }
 
             if(ani.getFrame() == 4){
                 System.out.println("Dash done");
                 stillDash = false;
+                immortality = false;
                 statueAnimate = F_Statue_Animate.BasicMovement;
                 ani.setFrames(sprite[F_List_Animation_Sprite.Walking.ordinal()].getSpriteArray(currentDirection.ordinal()));
                 ani.setDelay(5);
@@ -411,6 +445,10 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
 
     public void setPlayerPosition(Vector2D origin){
         this.origin = origin;
+    }
+
+    public void setStatusAnimation(F_Statue_Animate flag){
+        statueAnimate = flag;
     }
 
     // get grid in screen
@@ -515,6 +553,13 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
             if(countdownImmortality <= 0){
                 immortality = false;
             }
+        }
+    }
+
+    @Override
+    public void onframeDamage(int startFrame, int endFrame) {
+        if(stillAttack && ani.getFrame() >= startFrame && ani.getFrame() <= endFrame){
+            EventManager.triggerEvent("PlayerAttack",playerSwordHitbox);
         }
     }
 }

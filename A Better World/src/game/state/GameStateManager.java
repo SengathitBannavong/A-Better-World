@@ -5,6 +5,7 @@ import game.Input.MouseHandler;
 import game.enum_.Flag_GameState;
 import game.enum_.Map_Index_Teleport;
 import game.event.Event;
+import game.event.EventManager;
 import game.physic.Vector2D;
 
 
@@ -17,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
 
-public class GameStateManager {
+public class GameStateManager implements EventManager.EventListener  {
 
     private final Stack<GameState> states;
     private static GameState bufferState = null;
@@ -31,6 +32,7 @@ public class GameStateManager {
         states = new Stack<>();
         events = new HashMap<>();
         instance = this;
+        EventManager.addListener(this);
         Init();
     }
 
@@ -103,11 +105,20 @@ public class GameStateManager {
     }
 
     public void input(MouseHandler mouse, KeyHandler key) {
-//        if(key.talking.down){
-//            if(bufferState == null && Debug.debugging){
-//                setBufferState("test");
-//            }
-//        }
+//       if(key.test.down){
+//           addState(Flag_GameState.MENU);
+//       }
+
+       if(key.pause.down) {
+           if(states.peek() instanceof PlayState) {
+               System.out.println("Pause");
+               addState(Flag_GameState.PAUSE);
+               delay(200);
+           } else if(states.peek() instanceof PauseState) {
+                pop();
+                delay(200);
+           }
+       }
         if(bufferState!= null){
             bufferState.input(mouse, key);
             return;
@@ -187,5 +198,18 @@ public class GameStateManager {
 
     public void clearBufferState(){
         bufferState = null;
+    }
+
+    @Override
+    public void onEvent(String eventName, Object... args) {
+        // TODO Handle event change state like: menu, play, pause, game over
+    }
+
+    public void delay(int time){
+        try {
+            Thread.sleep(time);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

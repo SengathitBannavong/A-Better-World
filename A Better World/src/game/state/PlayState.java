@@ -8,7 +8,9 @@ import game.design.Observer;
 import game.entity.Monster;
 import game.entity.NPC;
 import game.entity.Player;
+import game.enum_.F_Statue_Animate;
 import game.enum_.F_Type_Sprite_Entity;
+import game.enum_.Flag_GameState;
 import game.enum_.Map_Index_Teleport;
 import game.event.Event;
 import game.event.EventManager;
@@ -77,6 +79,34 @@ public class PlayState extends GameState implements Observarable, EventManager.E
         LoadDataFromEvent(Map_name[index]);
         renderQueue = new RenderQueue();
         EventManager.addListener(this);
+        SaveStatusInPlaystate.getInstance().load(player,index);
+    }
+
+    public void resetState(){
+        clear();
+        index = 0;
+        bufferMap = mapParse.parsing("maps/"+ Map_name[0] +"_1_Layer.xml");
+        setMap();
+        player.setPlayerPosition(Map_origin[index]);
+        player.setStatusAnimation(F_Statue_Animate.BasicMovement);
+        player.Init();
+        GridCellWrite.parseGrid("maps/"+ Map_name[index]+".txt");
+        GridCellWrite.setPath(Map_name[index]);
+        LoadDataFromEvent(Map_name[index]);
+        SaveStatusInPlaystate.getInstance().load(player,index);
+    }
+
+    public void loadCurrentSave(){
+        SaveStatusInPlaystate save = SaveStatusInPlaystate.getInstance();
+        clear();
+        index = save.getMapIndex();
+        setMap();
+        player.setPlayerPosition(save.getPlayerPosition());
+        player.setHp(save.getHealthPlayer());
+        player.setStatusAnimation(F_Statue_Animate.BasicMovement);
+        GridCellWrite.parseGrid("maps/"+ Map_name[index]+".txt");
+        GridCellWrite.setPath(Map_name[index]);
+        LoadDataFromEvent(Map_name[index]);
     }
 
     public static synchronized PlayState getInit(GameStateManager gsm) {
@@ -165,10 +195,13 @@ public class PlayState extends GameState implements Observarable, EventManager.E
         if(key.test.down){
             EventManager.triggerEvent("PlayerGetHit", 1);
         }
+        if(key.dead.down){
+            EventManager.triggerEvent("PlayerDead");
+        }
     }
 
     private void GoNextMapByAdmin(KeyHandler key){
-        if(key.pause.down) {
+        if(key.passMapAD.down) {
             int i = ++index % 5;
             bufferMap = mapParse.parsing("maps/"+ Map_name[i] +"_1_Layer.xml");
             GridCellWrite.parseGrid("maps/"+ Map_name[i]+".txt");
@@ -177,6 +210,7 @@ public class PlayState extends GameState implements Observarable, EventManager.E
             setMap();
             clear();
             LoadDataFromEvent(Map_name[i]);
+            SaveStatusInPlaystate.getInstance().load(player,i);
             try {
                 Thread.sleep(200); // 200 milliseconds delay
             } catch (InterruptedException e) {
@@ -201,6 +235,7 @@ public class PlayState extends GameState implements Observarable, EventManager.E
                 setMap();
                 clear();
                 LoadDataFromEvent(Map_name[i]);
+                SaveStatusInPlaystate.getInstance().load(player, i);
                 try {
                     Thread.sleep(200); // 200 milliseconds delay
                 } catch (InterruptedException e) {
@@ -210,7 +245,7 @@ public class PlayState extends GameState implements Observarable, EventManager.E
         }
     }
 
-    private void clear(){
+    public void clear(){
         despawnMonster(activeMonsters);
         despawnNPC(activeNPCs);
     }
@@ -227,7 +262,12 @@ public class PlayState extends GameState implements Observarable, EventManager.E
         }
         renderQueue.render(g);
         player.render(g);
+        renderUI(g);
         drawTeleport(g);
+    }
+
+    public void renderUI(Graphics2D g){
+        player.renderUI(g);
     }
 
     public void monsterRender(Graphics2D g){
@@ -257,6 +297,8 @@ public class PlayState extends GameState implements Observarable, EventManager.E
             maps = bufferMap;
             cachedMap = bufferMap;
             bufferMap = null;
+        }else{
+            maps = cachedMap;
         }
     }
 
@@ -381,6 +423,15 @@ public class PlayState extends GameState implements Observarable, EventManager.E
                 break;
             case "PlayerGetHit":
                 player.takeDamage((int) args[0]);
+                break;
+            case "PlayerDead":
+                gsm.addState(Flag_GameState.GAMEOVER);
+                break;
+            case "MonsterAttack":
+                AABB monsterBox = (AABB) args[0];
+                if(monsterBox.collides(player.getHitbox())){
+                    player.takeDamage(1);
+                }
                 break;
             default:
                 break;

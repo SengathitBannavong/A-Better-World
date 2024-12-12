@@ -4,6 +4,8 @@ import game.Debug;
 import game.GamePanel;
 import game.design.Observer;
 import game.enum_.F_Direction;
+import game.enum_.F_List_Animation_Sprite;
+import game.enum_.F_Statue_Animate;
 import game.event.EventManager;
 import game.movement.BasicMovement;
 import game.movement.MovementStrategy;
@@ -13,7 +15,7 @@ import game.state.PlayState;
 import java.awt.*;
 import java.awt.geom.Line2D;
 import java.util.Arrays;
-
+// TODO - if have more time make this extents AI class because it will have MonsterAI and BossAI
 public class MonsterAI implements Observer<Player> {
 
     private MovementStrategy movementStrategy;
@@ -85,18 +87,20 @@ public class MonsterAI implements Observer<Player> {
 
     private boolean playerInRange() {
         if(Debug.debugging){
-           System.out.println("Player distance: " + monster.getOrigin().distance(lastPlayerPosition));
+            System.out.println("Player distance: " + monster.getOrigin().distance(lastPlayerPosition));
         }
         return monster.getOrigin().distance(lastPlayerPosition) < 250;
     }
 
+    // FIXME and fix when monster attack and player attack in the same time player cant move anymore
     private void chasePlayer(){
         Vector2D direction = lastPlayerPosition.subtract(monsterPosition);
         float dotx = direction.dot(new Vector2D(1, 0));
         float doty = direction.dot(new Vector2D(0, -1));
         // when monster is close to player, stop moving
-        if(monsterPosition.distance(lastPlayerPosition) < 10){
-            setFalse();
+        if(monsterPosition.distance(lastPlayerPosition) < 75 || monster.isStillAttack()){
+            //attack
+            monster.SetstateAnimation(F_Statue_Animate.Attack);
         }else {
             setDirection(dotx, doty);
         }

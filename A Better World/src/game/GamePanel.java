@@ -42,6 +42,8 @@ public class GamePanel extends JPanel implements Runnable {
     // GameStateManager
     private GameStateManager gameStateManager;
 
+    // TODO add sound and music to the game (Anh's code)
+
     public GamePanel(int width, int height) {
         GamePanel.width = width;
         GamePanel.height = height;
@@ -192,7 +194,7 @@ public class GamePanel extends JPanel implements Runnable {
         if(graphics2D != null) {
             graphics2D.setColor(new Color(109, 220, 239));
             graphics2D.fillRect(0, 0, width, height);
-            gameStateManager.render(graphics2D);
+           gameStateManager.render(graphics2D);
         }
     }
 

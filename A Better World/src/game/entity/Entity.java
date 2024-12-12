@@ -3,6 +3,7 @@ package game.entity;
 import game.enum_.F_Direction;
 import game.enum_.F_List_Animation_Sprite;
 import game.enum_.F_Statue_Animate;
+import game.event.EventManager;
 import game.object.BaseGameObject;
 import game.physic.Vector2D;
 
@@ -21,11 +22,20 @@ public abstract class Entity extends BaseGameObject {
     protected int maxHp;
     protected int damage;
     protected int maxDamage;
+
+    // Status Immortality
     protected boolean immortality = false;
     protected final int timeCountdownImmortality = 1;
     protected int countdownImmortality = 0;
+
+    // Hurt
     protected boolean isHurt = false;
     protected boolean stillHurt = false;
+
+    // Dead
+    protected boolean isDead = false;
+    protected boolean stillDead = false;
+    protected boolean isDied = false;
 
     public Entity(Vector2D origin, int size,int sizeSprite) {
         super(origin,size,sizeSprite);
@@ -41,7 +51,7 @@ public abstract class Entity extends BaseGameObject {
                 animation_attack();
                 break;
             case 2:// Dead
-                //animation_dead();
+                animation_dead();
                 break;
             case 3:// Hurt
                 animation_hurt();
@@ -53,20 +63,21 @@ public abstract class Entity extends BaseGameObject {
 
     }
 
-    private void animation_hurt() {
-        if(!stillHurt) {
-            setAnimation(currentDirection, sprite[F_List_Animation_Sprite.Hurt.ordinal()].getSpriteArray(currentDirection.ordinal()), 4);
-            stillHurt = true;
+    private void animation_dead() {
+        if(!stillDead) {
+            setAnimation(currentDirection, sprite[F_List_Animation_Sprite.Dead.ordinal()].getSpriteArray(F_Direction.UP.ordinal()), 10);
+            stillDead = true;
         }
 
-        if(ani.getFrame() == ani.getNumFrames() - 1){
-            System.out.println("Hurt done");
-            isHurt = false;
-            stillHurt = false;
+        if(ani.getFrame() == ani.getNumFrames() - 2){
+            System.out.println("Dead done");
+            isDead = false;
+            stillDead = false;
             statueAnimate = F_Statue_Animate.BasicMovement;
             ani.setFrames(sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(currentDirection.ordinal()));
             ani.setDelay(12);
             isMoving = false;
+            isDied = true;
         }
     }
 
@@ -136,6 +147,24 @@ public abstract class Entity extends BaseGameObject {
         }
     }
 
+    private void animation_hurt() {
+        if(!stillHurt) {
+            setAnimation(currentDirection, sprite[F_List_Animation_Sprite.Hurt.ordinal()].getSpriteArray(currentDirection.ordinal()), 4);
+            stillHurt = true;
+            stillAttack = false;
+        }
+
+        if(ani.getFrame() == ani.getNumFrames() - 1){
+            System.out.println("Hurt done");
+            isHurt = false;
+            stillHurt = false;
+            statueAnimate = F_Statue_Animate.BasicMovement;
+            ani.setFrames(sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(currentDirection.ordinal()));
+            ani.setDelay(12);
+            isMoving = false;
+        }
+    }
+
     private void animation_attack(){
         if(!stillAttack){
             setAnimation(currentDirection, sprite[F_List_Animation_Sprite.Attack.ordinal()].getSpriteArray(currentDirection.ordinal()), getSpeedAttack());
@@ -152,7 +181,6 @@ public abstract class Entity extends BaseGameObject {
             ani.setDelay(12);
             isMoving = false;
         }
-
     }
 
     public void setMovement(F_Direction fMovement, boolean b) {
@@ -222,5 +250,11 @@ public abstract class Entity extends BaseGameObject {
 
     public int getHp(){
         return hp;
+    }
+    public void setHp(int hp){
+        this.hp = hp;
+    }
+    public void setAttackSpeed(int attackSpeed) {
+        this.attackSpeed = attackSpeed;
     }
 }

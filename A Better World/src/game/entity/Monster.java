@@ -2,12 +2,16 @@ package game.entity;
 
 import game.Debug;
 import game.GamePanel;
+import game.design.DemageFrame;
 import game.design.Observer;
 import game.enum_.F_Direction;
 import game.enum_.F_List_Animation_Sprite;
+import game.enum_.F_Statue_Animate;
 import game.enum_.F_Type_Sprite_Entity;
+import game.event.EventManager;
 import game.graphic.Camera;
 import game.graphic.Sprite;
+import game.physic.AABB;
 import game.physic.Vector2D;
 import game.pool.IPoolable;
 import game.state.GameState;
@@ -15,7 +19,7 @@ import game.state.PlayState;
 
 import java.awt.*;
 
-public class Monster extends Entity implements IPoolable, Observer<PlayState> {
+public class Monster extends Entity implements IPoolable, Observer<PlayState>, DemageFrame {
 
     protected boolean active;
     private static int count  = 0;
@@ -26,7 +30,11 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState> {
     private boolean damageTakenGate = false;
     // y offset for animation falling down
     private int yOffset = 0;
+    // sword hitbox
+    private AABB monsterSwordHitbox;
 
+    // TODO make special for boss monster
+    // TODO if have more time make a own attack pattern for each monster
     private Sprite[] setDefaultSpite(){
         Sprite[] sprite = new Sprite[F_List_Animation_Sprite.SIZE.ordinal()];
         sprite[F_List_Animation_Sprite.Idle.ordinal()] = new Sprite("entity/Monster1_idle_264_264_sprite.png", 264, 264);
@@ -60,6 +68,7 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState> {
         id = count++;
         ai = new MonsterAI(this, player);
         PlayState.getInstance().addObserver(this);
+        monsterSwordHitbox = new AABB(origin.add(new Vector2D(4,4)),(sizeSprite /2) * GamePanel.Zoom  , (sizeSprite / 2) * GamePanel.Zoom );
         Init();
     }
 
@@ -75,6 +84,7 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState> {
         hp = maxHp;
         maxDamage = 2;
         damage = 1;
+        setAttackSpeed(2);
     }
 
     public void takeDamage(int damage){
@@ -98,7 +108,29 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState> {
        ai.update();
        setDirectionMovement();
        super.update();
+       onframeDamage(4,5);
        hitbounds_update();
+       updateMonsterSwordHitboxPosition();
+    }
+
+    private void updateMonsterSwordHitboxPosition() {
+        int offsetX = 0, offsetY = 0;
+        int hitboxSize = (sizeSprite/2)  * GamePanel.Zoom ;
+
+        if (currentDirection == F_Direction.UP) {
+            offsetX = -32 * GamePanel.Zoom;
+            offsetY = -60 * GamePanel.Zoom;
+        } else if (currentDirection == F_Direction.DOWN) {
+            offsetX = -32 * GamePanel.Zoom;
+            offsetY = -15 * GamePanel.Zoom;
+        } else if (currentDirection == F_Direction.LEFT) {
+            offsetX = -55 * GamePanel.Zoom;
+            offsetY = -32 * GamePanel.Zoom;
+        } else if (currentDirection == F_Direction.RIGHT) {
+            offsetX = -15 * GamePanel.Zoom;
+            offsetY = -32 * GamePanel.Zoom;
+        }
+        monsterSwordHitbox.setBox(origin.add(new Vector2D(offsetX, offsetY)), hitboxSize, hitboxSize);
     }
 
     public void hitbounds_update(){
@@ -127,10 +159,17 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState> {
         if(!active) return;
 
         int rendersize = size * GamePanel.Zoom;
+        // set Opacity
+        if(immortality){
+            g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
+        }
         g.drawImage(ani.getImage(),renderX, renderY,rendersize,rendersize, null);
-        // render damage taken
+        // set Opacity back to normal
+        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
 
-
+        if(stillAttack &&ani.getFrame() == 4 || ani.getFrame() == 5){
+            renderMonsterSwortHitbox(g);
+        }
         if(immortality){
             Sprite.drawArray(g, GameState.font, "Important", new Vector2D(renderX, renderY - 10), 16, 16, 16, 0);
         }
@@ -140,7 +179,9 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState> {
         }
 
     }
-
+    private void renderMonsterSwortHitbox(Graphics2D g){
+        monsterSwordHitbox.render(g);
+    }
     public void renderDebug(Graphics2D g, int renderX, int renderY){
         g.setColor(Color.YELLOW);
         int rendersize = size * GamePanel.Zoom;
@@ -172,6 +213,10 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState> {
        hitbox.setPosition(position);
     }
 
+    public void SetstateAnimation(F_Statue_Animate flag){
+        statueAnimate = flag;
+    }
+
     public int getId(){
         return id;
     }
@@ -183,6 +228,17 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState> {
             if(countdownImmortality <= 0){
                 immortality = false;
             }
+        }
+    }
+
+    public boolean isStillAttack(){
+        return stillAttack;
+    }
+
+    @Override
+    public void onframeDamage(int startFrame, int endFrame) {
+        if(stillAttack && ani.getFrame() >= startFrame && ani.getFrame() <= endFrame){
+            EventManager.triggerEvent("MonsterAttack", monsterSwordHitbox);
         }
     }
 }

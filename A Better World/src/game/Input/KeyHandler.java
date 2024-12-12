@@ -46,7 +46,7 @@ public class KeyHandler implements KeyListener {
     public Key enter = new Key();
     public Key escape = new Key();
     public Key dash = new Key();
-    public Key pause = new Key();
+    public Key passMapAD = new Key();
     public Key write = new Key();
     public Key cell = new Key();
     public Key deletecell = new Key();
@@ -57,6 +57,9 @@ public class KeyHandler implements KeyListener {
     public Key talking = new Key();
     public Key skip = new Key();
     public Key test = new Key();
+    public Key dead = new Key();
+    public Key pause = new Key();
+    public Key restart = new Key();
 
     public KeyHandler(GamePanel game){
         game.addKeyListener(this);
@@ -85,7 +88,7 @@ public class KeyHandler implements KeyListener {
             case KeyEvent.VK_ENTER -> enter.toggle(pressed);
             case KeyEvent.VK_ESCAPE -> escape.toggle(pressed);
             case KeyEvent.VK_SHIFT -> dash.toggle(pressed);
-            case KeyEvent.VK_5 -> pause.toggle(pressed);
+            case KeyEvent.VK_5 -> passMapAD.toggle(pressed);
             case KeyEvent.VK_1 -> write.toggle(pressed);
             case KeyEvent.VK_0 -> cell.toggle(pressed);
             case KeyEvent.VK_9 -> deletecell.toggle(pressed);
@@ -96,6 +99,9 @@ public class KeyHandler implements KeyListener {
             case KeyEvent.VK_C -> talking.toggle(pressed);
             case KeyEvent.VK_SPACE -> skip.toggle(pressed);
             case KeyEvent.VK_T -> test.toggle(pressed);
+            case KeyEvent.VK_K -> dead.toggle(pressed);
+            case KeyEvent.VK_P -> pause.toggle(pressed);
+            case KeyEvent.VK_R -> restart.toggle(pressed);
         }
     }
 

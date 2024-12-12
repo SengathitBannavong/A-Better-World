@@ -6,9 +6,10 @@ import java.awt.*;
 public class MenuPanel extends JPanel {
     private final ImageIcon backgroundImage;
 
+    // FIXME - Anh are fixing this ,maybe it have change soon
     public MenuPanel(JFrame menuFrame) {
         setLayout(new GridBagLayout());
-        backgroundImage = new ImageIcon("res/conversation/BackGround.png");
+        backgroundImage = new ImageIcon("res/photo/titile.jpg");
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 0, 10, 0);
