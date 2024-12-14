@@ -13,7 +13,6 @@ import java.awt.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
@@ -27,6 +26,9 @@ public class GameStateManager implements EventManager.EventListener  {
 
     // Singleton pattern
     private static GameStateManager instance = null;
+
+    // GameEnding
+    public static boolean GameEnding = false;
 
     public GameStateManager() {
         states = new Stack<>();
@@ -46,7 +48,7 @@ public class GameStateManager implements EventManager.EventListener  {
     private void Init(){
         parseMapName();
         showMapName();
-        LoadEvent(Map_Index_Teleport.Dungeon.ordinal());
+        LoadEvent(Map_Index_Teleport.Dungeon.ordinal() + 1);
         CachesState.setState(PlayState.getInit(this));
         states.push(CachesState.getState());
     }
@@ -64,6 +66,9 @@ public class GameStateManager implements EventManager.EventListener  {
                 break;
             case GAMEOVER:
                 states.push(GameOverState.getInit(this));
+                break;
+            case ENDCREDIT:
+                states.push(GameEndingState.getInit(this));
                 break;
             default:
                 break;
@@ -105,24 +110,37 @@ public class GameStateManager implements EventManager.EventListener  {
     }
 
     public void input(MouseHandler mouse, KeyHandler key) {
-//       if(key.test.down){
-//           addState(Flag_GameState.MENU);
-//       }
 
        if(key.pause.down) {
            if(states.peek() instanceof PlayState) {
                System.out.println("Pause");
                addState(Flag_GameState.PAUSE);
                delay(200);
-           } else if(states.peek() instanceof PauseState) {
+           }else{
+                System.out.println("Resume");
                 pop();
                 delay(200);
+           }
+       }
+
+       if(key.menu.down) {
+           if (states.peek() instanceof PlayState) {
+               System.out.println("Menu");
+               addState(Flag_GameState.MENU);
+               delay(200);
            }
        }
         if(bufferState!= null){
             bufferState.input(mouse, key);
             return;
         }
+
+        if(!states.isEmpty()){
+            if(states.peek() instanceof GameEndingState){
+                states.peek().input(mouse, key);
+            }
+        }
+        if(GameEnding)return;
         if(!states.isEmpty()){
             states.peek().input(mouse, key);
         }
@@ -141,7 +159,7 @@ public class GameStateManager implements EventManager.EventListener  {
     }
 
     private void CollisionHandleInput(KeyHandler key) {
-        if(key.collition.down) {
+        if(key.collition.down  && Debug.admin) {
             Debug.collision = !Debug.collision;
             //delay
             try {
@@ -202,7 +220,10 @@ public class GameStateManager implements EventManager.EventListener  {
 
     @Override
     public void onEvent(String eventName, Object... args) {
-        // TODO Handle event change state like: menu, play, pause, game over
+        if(eventName.equals("EndGame")){
+            GameEnding = true;
+            addState(Flag_GameState.ENDCREDIT);
+        }
     }
 
     public void delay(int time){

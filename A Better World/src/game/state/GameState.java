@@ -4,6 +4,7 @@ import game.Input.KeyHandler;
 import game.Input.MouseHandler;
 import game.graphic.Font;
 import game.physic.Vector2D;
+import game.pool.ItemPool;
 import game.pool.MonsterPool;
 import game.pool.NPCPool;
 
@@ -22,9 +23,9 @@ public abstract class GameState {
     protected static Vector2D[] Map_origin;
 
     //pool
-    // TODO - Implement item Hang's item pool
     protected static MonsterPool monsterPool;
     protected static NPCPool npcPool;
+    protected static ItemPool itemPool;
 
     // Timer
     protected static boolean OneSecond = false;

@@ -21,6 +21,8 @@ public class NPC extends Entity implements IPoolable {
     private boolean CanTalk = false;
     private String path_conversation = null;
 
+    public static boolean isTalkingToLeader = false;
+
     private Sprite[] setDefaultSpite(){
         Sprite[] sprite = new Sprite[F_List_Animation_Sprite.SIZE.ordinal()];
         sprite[F_List_Animation_Sprite.Idle.ordinal()] = new Sprite("player/Player_idle_64_64_sprite.png", 64, 64);
@@ -54,6 +56,10 @@ public class NPC extends Entity implements IPoolable {
     @Override
     public void update() {
         super.update();
+        if(isTalkingToLeader){
+            GamePanel.playMusic(9);
+            isTalkingToLeader = false;
+        }
     }
 
     @Override
@@ -135,5 +141,8 @@ public class NPC extends Entity implements IPoolable {
             return;
         }
         GameStateManager.setBufferState(path_conversation);
+        if(path_conversation.equalsIgnoreCase("Leader_village")) {
+            isTalkingToLeader = true;
+        }
     }
 }

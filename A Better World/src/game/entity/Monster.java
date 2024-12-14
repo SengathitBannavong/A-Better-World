@@ -15,9 +15,13 @@ import game.physic.AABB;
 import game.physic.Vector2D;
 import game.pool.IPoolable;
 import game.state.GameState;
+import game.state.GameStateManager;
 import game.state.PlayState;
 
 import java.awt.*;
+import java.util.Objects;
+
+import static game.enum_.F_Statue_Animate.Attack;
 
 public class Monster extends Entity implements IPoolable, Observer<PlayState>, DemageFrame {
 
@@ -33,8 +37,11 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState>, D
     // sword hitbox
     private AABB monsterSwordHitbox;
 
-    // TODO make special for boss monster
-    // TODO if have more time make a own attack pattern for each monster
+    // sight of light
+    private AABB monsterSightofLight;
+    // type
+    private F_Type_Sprite_Entity type ;
+
     private Sprite[] setDefaultSpite(){
         Sprite[] sprite = new Sprite[F_List_Animation_Sprite.SIZE.ordinal()];
         sprite[F_List_Animation_Sprite.Idle.ordinal()] = new Sprite("entity/Monster1_idle_264_264_sprite.png", 264, 264);
@@ -48,28 +55,50 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState>, D
 
     private Sprite[] setSpriteType(F_Type_Sprite_Entity type){
         Sprite[] sprite = new Sprite[F_List_Animation_Sprite.SIZE.ordinal()];
-        sprite[F_List_Animation_Sprite.Idle.ordinal()] = new Sprite("entity/Monster_idle"+type.ordinal()+"_64_64_sprite.png", 64, 64);
-        sprite[F_List_Animation_Sprite.Walking.ordinal()] = new Sprite("entity/Monster_walking"+type.ordinal()+"_64_64_sprite.png", 64, 64);
-        sprite[F_List_Animation_Sprite.Attack.ordinal()] = new Sprite("entity/Monster_attack"+type.ordinal()+"_64_64_sprite.png", 64, 64);
-        sprite[F_List_Animation_Sprite.Dead.ordinal()] = new Sprite("entity/Monster_death"+type.ordinal()+"_64_64_sprite.png", 64, 64);
-        sprite[F_List_Animation_Sprite.Hurt.ordinal()] = new Sprite("entity/Monster_hurt"+type.ordinal()+"_64_64_sprite.png", 64, 64);
+        sprite[F_List_Animation_Sprite.Idle.ordinal()] = new Sprite("entity/Monster"+type.ordinal()+"_idle_264_264_sprite.png", 264, 264);
+        sprite[F_List_Animation_Sprite.Walking.ordinal()] = new Sprite("entity/Monster"+type.ordinal()+"_walking_264_264_sprite.png", 264, 264);
+        sprite[F_List_Animation_Sprite.Attack.ordinal()] = new Sprite("entity/Monster"+type.ordinal()+"_attack_264_264_sprite.png", 264, 264);
+        sprite[F_List_Animation_Sprite.Dead.ordinal()] = new Sprite("entity/Monster"+type.ordinal()+"_idle_264_264_sprite.png", 264, 264);
+        sprite[F_List_Animation_Sprite.Hurt.ordinal()] = new Sprite("entity/Monster"+type.ordinal()+"_idle_264_264_sprite.png", 264, 264);
+        sprite[F_List_Animation_Sprite.Dash.ordinal()] = new Sprite("entity/Monster"+type.ordinal()+"_idle_264_264_sprite.png", 264, 264);
+        return sprite;
+    }
+
+    private Sprite[] setBossSprite(){
+        Sprite[] sprite = new Sprite[F_List_Animation_Sprite.SIZE.ordinal()];
+        sprite[F_List_Animation_Sprite.Idle.ordinal()] = new Sprite("entity/Boss_idle_128_128_sprite.png", 128, 128);
+        sprite[F_List_Animation_Sprite.Walking.ordinal()] = new Sprite("entity/Boss_idle_128_128_sprite.png", 128, 128);
+        sprite[F_List_Animation_Sprite.Attack.ordinal()] = new Sprite("entity/Boss_attack_128_128_sprite.png", 128, 128);
+        sprite[F_List_Animation_Sprite.Dead.ordinal()] = new Sprite("entity/Boss_dead_128_128_sprite.png", 128, 128);
+        sprite[F_List_Animation_Sprite.Hurt.ordinal()] = new Sprite("entity/Boss_hurt_128_128_sprite.png", 128, 128);
         return sprite;
     }
 
     public Monster(Player player, F_Type_Sprite_Entity type){
         System.out.println("Monster created");
-        super(new Vector2D(0,0), 64, 64);
+        int size = 64;
+        if(type == F_Type_Sprite_Entity.Type3){
+            size = 192;
+        }
+        super(new Vector2D(0,0), size, size);
+        this.type = type;
         setAcc(1.5f);
         setDe_acc(1.5f);
-        this.sprite = setDefaultSpite();
+        if(type == F_Type_Sprite_Entity.Type3) {
+            this.sprite = setBossSprite();
+            BossInit();
+        }else{
+            this.sprite = setSpriteType(type);
+            Init();
+        }
         active = false;
-        setHitbox(origin, 64, 64);
+        setHitbox(origin, size, size);
         setAnimation(F_Direction.RIGHT, sprite[F_List_Animation_Sprite.Idle.ordinal()].getSpriteArray(F_Direction.LEFT.ordinal()), 10);
         id = count++;
         ai = new MonsterAI(this, player);
         PlayState.getInstance().addObserver(this);
         monsterSwordHitbox = new AABB(origin.add(new Vector2D(4,4)),(sizeSprite /2) * GamePanel.Zoom  , (sizeSprite / 2) * GamePanel.Zoom );
-        Init();
+        monsterSightofLight = new AABB(origin.add(new Vector2D(4,4)),(sizeSprite) * GamePanel.Zoom  , (sizeSprite) * GamePanel.Zoom );
     }
 
     public Monster(Vector2D origin, int size, int sizeSprite) {
@@ -87,6 +116,14 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState>, D
         setAttackSpeed(2);
     }
 
+    private void BossInit(){
+        maxHp = 30;
+        hp = maxHp;
+        maxDamage = 5;
+        damage = 3;
+        setAttackSpeed(2);
+    }
+
     public void takeDamage(int damage){
         if(immortality) return;
         hp -= damage;
@@ -94,6 +131,10 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState>, D
         damageTakenGate = true;
         System.out.println("Monster taken damage:"+damage+"current hp is:" + hp);
         if(hp <= 0){
+            if(type == F_Type_Sprite_Entity.Type3) {
+                setAnimation(F_Direction.UP, sprite[F_List_Animation_Sprite.Dead.ordinal()].getSpriteArray(F_Direction.UP.ordinal()), 20);
+                return;
+            }
             deactivate();
         }
         immortality = true;
@@ -105,36 +146,155 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState>, D
     }
 
     public void update(){
+        if(GameStateManager.GameEnding){
+            super.update();
+            if(ani.getFrame() == 5){
+                EventManager.triggerEvent("LastWordOfBoss");
+            }
+            if(ani.getFrame() == 6){
+                deactivate();
+            }
+            return;
+        }
        ai.update();
        setDirectionMovement();
+       updateDelay();
        super.update();
        onframeDamage(4,5);
        hitbounds_update();
        updateMonsterSwordHitboxPosition();
+       updateSightOfLightPosition();
+    }
+
+    private void updateDelay(){
+        if (Objects.requireNonNull(statueAnimate) == Attack) {
+            if (type == F_Type_Sprite_Entity.Type3 && ani.getFrame() == 1) {
+                ani.setDelay(20);
+            } else if (type == F_Type_Sprite_Entity.Type3 && ani.getFrame() == 2) {
+                ani.setDelay(5);
+            } else if (type != F_Type_Sprite_Entity.Type3 && ani.getFrame() == 5) {
+                ani.setDelay(30);
+            }
+        }
+    }
+
+    private void updateSightOfLightPosition(){
+        float offsetX = 0, offsetY = 0;
+        if(type == F_Type_Sprite_Entity.Type3){
+
+            switch (currentDirection) {
+                case UP:
+                    offsetX = 288 * GamePanel.Zoom;
+                    offsetY = 384 * GamePanel.Zoom;
+                    break;
+                case DOWN:
+                    offsetX = 288 * GamePanel.Zoom;
+                    offsetY = 192 * GamePanel.Zoom;
+                    break;
+                case LEFT:
+                    offsetX = 384 * GamePanel.Zoom;
+                    offsetY = 288 * GamePanel.Zoom;
+                    break;
+                case RIGHT:
+                    offsetX = 192 * GamePanel.Zoom;
+                    offsetY = 288 * GamePanel.Zoom;
+                    break;
+                default:
+                    // No offset changes for other directions (if any)
+                    break;
+            }
+        }else{
+            switch (currentDirection) {
+                case UP:
+                    offsetX = 192;
+                    offsetY = 256;
+                    break;
+                case DOWN:
+                    offsetX = 192;
+                    offsetY = 128;
+                    break;
+                case LEFT:
+                    offsetX = 256;
+                    offsetY = 192;
+                    break;
+                case RIGHT:
+                    offsetX = 128;
+                    offsetY = 192;
+                    break;
+                default:
+                    // No offset changes for other directions (if any)
+                    break;
+            }
+        }
+        monsterSightofLight.setBox(origin.subtract(new Vector2D(offsetX,offsetY)), size*2, size*2);
     }
 
     private void updateMonsterSwordHitboxPosition() {
         int offsetX = 0, offsetY = 0;
         int hitboxSize = (sizeSprite/2)  * GamePanel.Zoom ;
 
-        if (currentDirection == F_Direction.UP) {
-            offsetX = -32 * GamePanel.Zoom;
-            offsetY = -60 * GamePanel.Zoom;
-        } else if (currentDirection == F_Direction.DOWN) {
-            offsetX = -32 * GamePanel.Zoom;
-            offsetY = -15 * GamePanel.Zoom;
-        } else if (currentDirection == F_Direction.LEFT) {
-            offsetX = -55 * GamePanel.Zoom;
-            offsetY = -32 * GamePanel.Zoom;
-        } else if (currentDirection == F_Direction.RIGHT) {
-            offsetX = -15 * GamePanel.Zoom;
-            offsetY = -32 * GamePanel.Zoom;
+        if(type == F_Type_Sprite_Entity.Type3){
+            hitboxSize = (sizeSprite/3)  * GamePanel.Zoom + 10;
+            monsterSwordHitbox.setyOffset((float) -sizeSprite );
+            monsterSwordHitbox.setxOffset((float) -sizeSprite );
+            switch (currentDirection) {
+                case UP:
+                    offsetX = 108;
+                    offsetY = 108;
+                    break;
+                case DOWN:
+                    offsetX = 108;
+                    offsetY = 220;
+                    break;
+                case LEFT:
+                    offsetX = 63 ;
+                    offsetY = 160 ;
+                    break;
+                case RIGHT:
+                    offsetX = 193 ;
+                    offsetY = 160 ;
+                    break;
+                default:
+                    // No offset changes for other directions (if any)
+                    break;
+            }
+            monsterSwordHitbox.setBox(origin.add(new Vector2D(offsetX, offsetY)), hitboxSize, hitboxSize);
+        }else {
+            switch (currentDirection) {
+                case UP:
+                    offsetX = -32 * GamePanel.Zoom;
+                    offsetY = -60 * GamePanel.Zoom;
+                    break;
+                case DOWN:
+                    offsetX = -32 * GamePanel.Zoom;
+                    offsetY = -15 * GamePanel.Zoom;
+                    break;
+                case LEFT:
+                    offsetX = -55 * GamePanel.Zoom;
+                    offsetY = -32 * GamePanel.Zoom;
+                    break;
+                case RIGHT:
+                    offsetX = -15 * GamePanel.Zoom;
+                    offsetY = -32 * GamePanel.Zoom;
+                    break;
+                default:
+                    // No offset changes for other directions (if any)
+                    break;
+            }
+            monsterSwordHitbox.setBox(origin.add(new Vector2D(offsetX, offsetY)), hitboxSize, hitboxSize);
         }
-        monsterSwordHitbox.setBox(origin.add(new Vector2D(offsetX, offsetY)), hitboxSize, hitboxSize);
+
     }
 
     public void hitbounds_update(){
-       setHitbox(origin, 64, 64);
+        int width = (sizeSprite / 2);
+        int height = (sizeSprite / 2);
+        if(type == F_Type_Sprite_Entity.Type3){
+            height = (sizeSprite / 2);
+            hitbox.setyOffset(40);
+        }
+
+        hitbox.setBox(origin, width, height);
     }
 
     public void setDirectionMovement(){
@@ -164,29 +324,33 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState>, D
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
         }
         g.drawImage(ani.getImage(),renderX, renderY,rendersize,rendersize, null);
-        // set Opacity back to normal
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-
         if(stillAttack &&ani.getFrame() == 4 || ani.getFrame() == 5){
             renderMonsterSwortHitbox(g);
         }
-        if(immortality){
-            Sprite.drawArray(g, GameState.font, "Important", new Vector2D(renderX, renderY - 10), 16, 16, 16, 0);
-        }
+
+        Sprite.drawArray(g, GameState.font, "HP: " + hp, new Vector2D(renderX, renderY - 10), 16, 16, 16, 0);
+
         if(Debug.debugging){
             renderDebug(g, renderX, renderY);
-            ai.render(g);
+            renderSightOfLight(g);
         }
 
     }
     private void renderMonsterSwortHitbox(Graphics2D g){
         monsterSwordHitbox.render(g);
     }
+
+    public void renderSightOfLight(Graphics2D g){
+        monsterSightofLight.render(g);
+    }
+
     public void renderDebug(Graphics2D g, int renderX, int renderY){
         g.setColor(Color.YELLOW);
         int rendersize = size * GamePanel.Zoom;
         g.drawRect(renderX, renderY, rendersize, rendersize);
         hitbox.render(g);
+        ai.render(g);
         Sprite.drawArray(g, GameState.font, "X: " + (int)origin.x + " Y: " + (int)origin.y, new Vector2D(renderX, renderY - 10), 32, 32, 16, 0);
     }
 
@@ -221,6 +385,14 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState>, D
         return id;
     }
 
+    public F_Type_Sprite_Entity getType(){
+        return type;
+    }
+
+    public AABB getMonsterSightofLight(){
+        return monsterSightofLight;
+    }
+
     @Override
     public void updateListener(PlayState playState) {
         if(countdownImmortality > 0) {
@@ -238,7 +410,14 @@ public class Monster extends Entity implements IPoolable, Observer<PlayState>, D
     @Override
     public void onframeDamage(int startFrame, int endFrame) {
         if(stillAttack && ani.getFrame() >= startFrame && ani.getFrame() <= endFrame){
+            if(ani.getFrame() == startFrame){
+                GamePanel.playerAttack();
+            }
             EventManager.triggerEvent("MonsterAttack", monsterSwordHitbox);
         }
+    }
+
+    public void setDelay(int i) {
+        ani.setDelay(i);
     }
 }

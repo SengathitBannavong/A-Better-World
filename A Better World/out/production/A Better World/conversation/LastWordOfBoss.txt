@@ -1,0 +1,7 @@
+size:6
+Boss: Ah I cant believe It , I am losing you
+Boss: Are you strong because you are traveler or you are traveler because you are strong?
+Player: Nah I am only traveler who pass this village
+Player: Stand Proud, you are strong
+Boss: You are strong, But you still cant find your princess ,ha ha ha
+Player: I will find her... Goodbye

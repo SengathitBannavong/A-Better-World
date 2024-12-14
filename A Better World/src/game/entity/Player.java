@@ -4,13 +4,14 @@ import game.Debug;
 import game.GamePanel;
 import game.Input.KeyHandler;
 import game.Input.MouseHandler;
+import game.Window;
 import game.design.DemageFrame;
 import game.design.Observarable;
 import game.design.Observer;
 import game.enum_.F_Direction;
 import game.enum_.F_List_Animation_Sprite;
 import game.enum_.F_Statue_Animate;
-import game.event.Event;
+import game.enum_.F_Type_Sprite_Entity;
 import game.event.EventManager;
 import game.graphic.Camera;
 import game.graphic.Sprite;
@@ -50,6 +51,16 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
 
     // HP UI
     Sprite hpUI = new Sprite("player/hp_ui.png", 128, 128);
+
+    // Status
+    private boolean hasShield = false;
+    private boolean hasPower = false;
+    private int countdownHasPower = 0;
+    private int timeHaspower = 10;
+
+    // Critical hit
+    public static int countDrawCritical = 0;
+    private int animationCritical = 10;
 
     GridCellWrite gridCellWrite = new GridCellWrite(GameStateManager.getMapName(1));
 
@@ -105,7 +116,7 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
         }
         setupDirectionMovement();
 
-        if(is_dash_update() && !IsdashCountDown()){// Update the animation dash movement
+        if(is_dash_update() && !IsdashCountDown() ){// Update the animation dash movement
             dash_update();
         }else{
             // Update the animation basic movement
@@ -118,6 +129,30 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
         hitbounds_update();
         checkMapBoundaries();
         notifyObservers();
+    }
+
+    public int getAttackDemage(){
+        //random damge between damage and maxDamage
+        if(!Debug.collision){
+            return 100;
+        }
+        int damage_ = (int)(Math.random() * (maxDamage - damage + 1) + damage);
+        if(damage_ < 0){
+            damage_ = 0;
+        }
+        if(damage_ > maxDamage){
+            damage_ = maxDamage;
+        }
+
+        if(damage_ == 2){
+            Player.countDrawCritical = 7;
+        }
+
+        if(hasPower){
+            damage_ *= 2;
+        }
+
+        return damage_;
     }
 
     private void updatePlayerSwordHitboxPosition() {
@@ -143,6 +178,11 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
 
     public void takeDamage(int damage){
         if(immortality) return;
+        if(hasShield){
+            hasShield = false;
+            return;
+        }
+        GamePanel.playSE(11);
         hp -= damage;
         isHurt = true;
         System.out.println("Player taken damage:"+damage+"current hp is:" + hp);
@@ -236,9 +276,14 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
         if(immortality){
             g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
         }
+        if(hasShield){
+            g.setColor(new Color(104, 251, 255, 189));
+            g.fillOval((int) hitbox.getPosition().getWorldVar().x +1, (int)hitbox.getPosition().getWorldVar().y+8 ,128, 128);
+        }
         g.drawImage(ani.getImage(),renderX, renderY,rendersize,rendersize, null);
         g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
         renderNpcSpeak(g);
+        renderCricle(g);
         if(Debug.debugging) {
             renderDebug(g, renderX, renderY);
             drawGridAroundPlayer(g);
@@ -250,11 +295,29 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
         return 10 - index;
     }
 
+    private void renderCricle(Graphics2D g){
+        if(countDrawCritical > 0) {
+            countDrawCritical--;
+            Sprite.drawArray(g, GameState.font, "Critical Hit", origin.getWorldVar(), 32, 32 + animationCritical, 20, 0);
+            if(animationCritical > 0){
+                animationCritical--;
+            }
+        }else{
+            animationCritical = 10;
+            countDrawCritical = 0;
+        }
+    }
     public void renderUI(Graphics2D g){
         int index = getIndexHpUi(hp);
         if(index < 0) index = 0;
         if(index > 10) index = 10;
         g.drawImage(hpUI.getSprite(index,0), -30, -140, 384, 384, null);
+        if(count_dash_countdown > 0){
+            Sprite.drawArray(g, GameState.font, "Dash: "+count_dash_countdown, new Vector2D(Window.getWIDTH() - 264, 0), 32, 32, 20, 0);
+        }
+        if(countdownHasPower> 0){
+            Sprite.drawArray(g, GameState.font, "Power: "+countdownHasPower, new Vector2D(Window.getWIDTH() - 264, 32), 32, 32, 20, 0);
+        }
     }
 
     private void renderPlayerSwortHitbox(Graphics2D g){
@@ -325,7 +388,7 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
             movement_dir[F_Direction.RIGHT.ordinal()] = false;
         }
 
-        if(key.dash.down){
+        if(key.dash.down ){
             isDash = true;
         }else{
             isDash = false;
@@ -334,6 +397,9 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
 
         if(MouseHandler.getButtom() == 1){
             statueAnimate = F_Statue_Animate.Attack;
+            if(!stillAttack){
+                GamePanel.playerAttack();
+            }
             setFlase();
         }else{
             if(!stillAttack) {
@@ -351,7 +417,7 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
             setFlase();
         }
 
-        if(key.write.down){
+        if(key.write.down  && Debug.admin){
             System.out.println("Write");
             GridCellWrite.writeGrid();
             //delay
@@ -362,25 +428,25 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
             }
         }
 
-        if(key.cell.down){
+        if(key.cell.down  && Debug.admin){
             int pos_x = ((int)origin.x)  / (GamePanel.Tile_Size * GamePanel.Zoom);
             int pos_y = ((int)origin.y) / (GamePanel.Tile_Size * GamePanel.Zoom);
             gridCellWrite.setGrid(pos_x, pos_y);
             System.out.println("Cell : "+pos_x+" "+pos_y);
         }
 
-        if(key.deletecell.down){
+        if(key.deletecell.down  && Debug.admin){
             int pos_x = ((int)origin.x)  / (GamePanel.Tile_Size * GamePanel.Zoom);
             int pos_y = ((int)origin.y) / (GamePanel.Tile_Size * GamePanel.Zoom);
             gridCellWrite.deleteGrid(pos_x, pos_y);
             System.out.println("Cell : "+pos_x+" "+pos_y);
         }
 
-        if(key.spawn.down){
+        if(key.spawn.down  && Debug.admin){
             PlayState.spawnMonster(origin);
         }
 
-        if (key.despawn.down) {
+        if (key.despawn.down && Debug.admin) {
             PlayState.despawnMonster(getMonstersAroundPlayer());
         }
 
@@ -409,6 +475,13 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
 
     public AABB getHitbox(){return hitbox;}
 
+    public void getHealt(int health){
+        hp += health;
+        if(hp > maxHp){
+            hp = maxHp;
+        }
+    }
+
     private boolean checkmovent(){
         for(int i = F_Direction.UP.ordinal(); i < F_Direction.SIZE.ordinal(); i++){
             if(movement_dir[i]){
@@ -429,6 +502,7 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
                 setAnimation(currentDirection, sprite[F_List_Animation_Sprite.Dash.ordinal()].getSpriteArray(currentDirection.ordinal()), 6);
                 stillDash = true;
                 immortality = true;
+                stillAttack = false;
             }
 
             if(ani.getFrame() == 4){
@@ -554,6 +628,12 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
                 immortality = false;
             }
         }
+        if(countdownHasPower > 0){
+            countdownHasPower--;
+            if(countdownHasPower <= 0){
+                hasPower = false;
+            }
+        }
     }
 
     @Override
@@ -561,5 +641,25 @@ public class Player extends Entity implements Observer<PlayState>, Observarable 
         if(stillAttack && ani.getFrame() >= startFrame && ani.getFrame() <= endFrame){
             EventManager.triggerEvent("PlayerAttack",playerSwordHitbox);
         }
+    }
+
+    public void pickUpItem(Item item){
+        System.out.println("Picked up: " + item.getType());
+        GamePanel.playSE(7);
+        if (item.getType() == F_Type_Sprite_Entity.Type1){ // Type1 is shield
+            hasShield = true;
+        }
+        else if (item.getType() == F_Type_Sprite_Entity.Type2){ // Type2 is power
+            hasPower = true;
+            countdownHasPower = timeHaspower;
+        }
+        else if (item.getType() == F_Type_Sprite_Entity.Type3){ // Type3 is health
+            getHealt(2);
+            System.out.println("Player's blood: +2");
+        }
+    }
+
+    public void CantMove() {
+        Arrays.fill(movement_dir, false);
     }
 }

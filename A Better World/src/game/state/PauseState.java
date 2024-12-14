@@ -42,5 +42,5 @@ public class PauseState extends GameState {
         Sprite.drawArray(g,font,"My Mom was Call",new Vector2D((float) (GamePanel.width /2) - 128, (float) GamePanel.height /2 ), 32, 32, 25, 0);
         Sprite.drawArray(g,font,"Press P to continue",new Vector2D((float) (GamePanel.width /2) - 128, (float) GamePanel.height /2 + 64), 32, 32, 25, 0);
     }
-    
+
 }

@@ -3,6 +3,7 @@ package game.state;
 import game.GamePanel;
 import game.Input.KeyHandler;
 import game.Input.MouseHandler;
+import game.event.EventManager;
 import game.graphic.Sprite;
 import game.physic.Vector2D;
 
@@ -127,16 +128,6 @@ public class DialogConversationState extends GameState {
 
         g.setColor(Color.WHITE);
         if (currentSentenceIndex < dialogQueue.size()) {
-//            Sprite.drawArray(
-//                    g,
-//                    GameState.font,
-//                    dialogQueue.get(currentSentenceIndex).substring(0, displayedChars), // Display partial text
-//                    new Vector2D(boxX + 10, boxY + 10),
-//                    GamePanel.Tile_Size * 2,
-//                    GamePanel.Tile_Size * 2,
-//                    20,
-//                    0
-//            );
             String currentText = dialogQueue.get(currentSentenceIndex).substring(0, displayedChars);
             g.setFont(font);
             g.drawString(currentText, boxX + 20, boxY + 40); // Adjust text position for better alignment
@@ -201,6 +192,10 @@ public class DialogConversationState extends GameState {
         currentSentenceIndex++;
         if (currentSentenceIndex >= dialogQueue.size()) {
             gsm.clearBufferState();
+            if(GameStateManager.GameEnding){
+                EventManager.triggerEvent("EndGame");
+                System.out.println("EndGame has been triggered");
+            }
             System.out.println("Dialog conversation finished");
             return;
         }

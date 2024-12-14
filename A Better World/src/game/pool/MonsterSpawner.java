@@ -15,8 +15,8 @@ public class MonsterSpawner {
     public MonsterSpawner() {
     }
 
-    public static void spawnMonster(Vector2D position) {
-        Monster monster = MonsterPool.instance.getMonster(F_Type_Sprite_Entity.Type1);
+    public static void spawnMonster(Vector2D position, F_Type_Sprite_Entity type) {
+        Monster monster = MonsterPool.instance.getMonster(type);
             if(monster != null) {
                 monster.activate();
                 monster.setPos(position);
@@ -31,7 +31,7 @@ public class MonsterSpawner {
     public static void despawnMonster(List<Monster> monsters) {
         for (Monster monster : new ArrayList<>(monsters)) { // Create a copy of the list
             monster.deactivate();
-            MonsterPool.instance.returnMonster(monster, F_Type_Sprite_Entity.Type1);
+            MonsterPool.instance.returnMonster(monster, monster.getType());
             PlayState.removeMonster(monster); // Modify the original list
             monsters.remove(monster); // Remove monster safely from the original list
             System.out.println("Monster id:" + monster.getId() + " despawned");

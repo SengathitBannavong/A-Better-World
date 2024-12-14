@@ -65,7 +65,6 @@ public class NPCPool {
             case 2 -> F_Type_Sprite_Entity.Type2;
             case 3 -> F_Type_Sprite_Entity.Type3;
             case 4 -> F_Type_Sprite_Entity.Type4;
-            case 5 -> F_Type_Sprite_Entity.Type5;
             default -> F_Type_Sprite_Entity.Type1;
         };
     }

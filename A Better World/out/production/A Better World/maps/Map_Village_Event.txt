@@ -1,11 +1,15 @@
-7
-1825 1300 Type1
-2050 1799 Type1
-2975 1400 Type1
-2098 829 Type1
-2525 865 Type1
-2784 899 Type1
-3006 865 Type1
+11
+1825 1300 Type2
+2050 1654 Type2
+2975 1400 Type2
+2098 829 Type2
+2525 865 Type2
+2784 899 Type2
+3006 865 Type2
+577 1344 Type2
+891 1534 Type2
+449 1609 Type2
+994 1598 Type2
 9
 1376 1348 Type1 true advise_village
 2207 1632 Type2 true advise_village
@@ -16,8 +20,9 @@
 2657 480 Type3 true advise_village
 2897 529 Type4 true advise_village
 3360 663 Type1 true advise_village
-4
+5
 2560 1420 Type1
-1250 1650 Type2
-3600 1400 Type2
+1247 1535 Type2
 4421 1520 Type3
+2717 1184 Type3
+2366 632 Type3

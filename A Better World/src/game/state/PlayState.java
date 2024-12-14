@@ -1,10 +1,12 @@
 package game.state;
 
+import game.Debug;
 import game.GamePanel;
 import game.Input.KeyHandler;
 import game.Input.MouseHandler;
 import game.design.Observarable;
 import game.design.Observer;
+import game.entity.Item;
 import game.entity.Monster;
 import game.entity.NPC;
 import game.entity.Player;
@@ -27,6 +29,7 @@ import game.tile.MapParse;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -47,13 +50,16 @@ public class PlayState extends GameState implements Observarable, EventManager.E
     private int index = 0;
     private static final Map_teleport[] map_teleport = parseMapTeleport();
 
+    // Item
+    private static List<Item> activeItems;
+    private static final ItemSpawner itemSpawner = new ItemSpawner();
+
     // CountDown
     private static int countdown_spawn = 0;
 
     // Event
     Event bufferEvent = null;
-
-    // Conversation
+    private static boolean[] Event_Ending;
 
     // Render
     private final RenderQueue renderQueue;
@@ -68,14 +74,18 @@ public class PlayState extends GameState implements Observarable, EventManager.E
         super(gsm);
         instance = this;
         player = Player.getInstance(Map_origin[index], GamePanel.Tile_Size * GamePanel.Scale, 64,this); // scale the player
-        monsterPool = MonsterPool.getInit(25, new MonsterFactory(), player, F_Type_Sprite_Entity.Type1.ordinal());
+        monsterPool = MonsterPool.getInit(15, new MonsterFactory(), player, F_Type_Sprite_Entity.Type3.ordinal());
         npcPool = NPCPool.getInit(5, new NPCFactory(),F_Type_Sprite_Entity.Type4.ordinal());
+        itemPool = ItemPool.getInit(5, new ItemFactory(), F_Type_Sprite_Entity.Type3.ordinal());
         maps = cachedMap;
+        Event_Ending = new boolean[Map_Index_Teleport.Dungeon.ordinal() + 2];
+        resetEventEnding();
         GridCellWrite.parseGrid("maps/"+ Map_name[index]+".txt");
         GridCellWrite.setPath(Map_name[index]);
         showMapTeleport();
         activeMonsters = new ArrayList<>();
         activeNPCs = new ArrayList<>();
+        activeItems = new ArrayList<>();
         LoadDataFromEvent(Map_name[index]);
         renderQueue = new RenderQueue();
         EventManager.addListener(this);
@@ -92,6 +102,7 @@ public class PlayState extends GameState implements Observarable, EventManager.E
         player.Init();
         GridCellWrite.parseGrid("maps/"+ Map_name[index]+".txt");
         GridCellWrite.setPath(Map_name[index]);
+        resetEventEnding();
         LoadDataFromEvent(Map_name[index]);
         SaveStatusInPlaystate.getInstance().load(player,index);
     }
@@ -106,7 +117,15 @@ public class PlayState extends GameState implements Observarable, EventManager.E
         player.setStatusAnimation(F_Statue_Animate.BasicMovement);
         GridCellWrite.parseGrid("maps/"+ Map_name[index]+".txt");
         GridCellWrite.setPath(Map_name[index]);
+        setEventEnding(index,false);
         LoadDataFromEvent(Map_name[index]);
+        if(index == Map_Index_Teleport.Dungeon.ordinal()){
+            GamePanel.playMusic(4);
+        }else if(index == Map_Index_Teleport.Middle.ordinal() || index == Map_Index_Teleport.Level1.ordinal()) {
+            GamePanel.playMusic(9);
+        }else{
+            GamePanel.playMusic(10);
+        }
     }
 
     public static synchronized PlayState getInit(GameStateManager gsm) {
@@ -124,7 +143,9 @@ public class PlayState extends GameState implements Observarable, EventManager.E
     public void update() {
         player.update();
         monsterUpdate();
+        itemUpdate();
         npcUpdate();
+        checkItemPickupCollision();
         sentCoundown();
     }
 
@@ -136,10 +157,11 @@ public class PlayState extends GameState implements Observarable, EventManager.E
         }
 
         int size_monster = bufferEvent.getCapacityMonster();
-        if(size_monster > 0) {
+        if(size_monster > 0 && !Event_Ending[index]) {
             List<Vector2D> monsterPosition = bufferEvent.getMonsterSpawnPoints();
+            List<F_Type_Sprite_Entity> monsterTypes = bufferEvent.getMonsterTypes();
             for (int i = 0; i < size_monster; i++) {
-                monsterSpawner.spawnMonster(monsterPosition.get(i));
+                MonsterSpawner.spawnMonster(monsterPosition.get(i), monsterTypes.get(i));
             }
         }
         int size_npc = bufferEvent.getCapacityNPC();
@@ -156,17 +178,36 @@ public class PlayState extends GameState implements Observarable, EventManager.E
                 activeNPCs.get(i).setPathConversation(path);
             }
         }
+
+        int size_item = bufferEvent.getCapacityItem();
+        if(size_item > 0 && !Event_Ending[index]){
+            List<Vector2D> itemPosition = bufferEvent.getItemSpawnPoints();
+            for (int i = 0; i < size_item; i++){
+                F_Type_Sprite_Entity temp = bufferEvent.getItemTypes().get(i);
+                itemSpawner.spawnItem(itemPosition.get(i), temp);
+            }
+        }
     }
 
     private void monsterUpdate(){
         for(Monster monster : activeMonsters){
             monster.update();
         }
+        if(activeMonsters.isEmpty()){
+            addEventEnding(index);
+        }
     }
 
     private void npcUpdate(){
         for(NPC npc : activeNPCs){
             npc.update();
+        }
+    }
+
+    private void itemUpdate(){
+        if (activeItems == null || activeItems.isEmpty()) return;
+        for(Item item : activeItems){
+            item.update();
         }
     }
 
@@ -192,17 +233,18 @@ public class PlayState extends GameState implements Observarable, EventManager.E
         GoNextMapByAdmin(key);
         GoNextMapByBox(key);
         player.input(key, mouse);
-        if(key.test.down){
+        if(key.test.down  && Debug.admin){
             EventManager.triggerEvent("PlayerGetHit", 1);
         }
-        if(key.dead.down){
+        if(key.dead.down  && Debug.admin){
             EventManager.triggerEvent("PlayerDead");
         }
     }
 
     private void GoNextMapByAdmin(KeyHandler key){
-        if(key.passMapAD.down) {
+        if(key.passMapAD.down  && Debug.admin) {
             int i = ++index % 5;
+            index = i;
             bufferMap = mapParse.parsing("maps/"+ Map_name[i] +"_1_Layer.xml");
             GridCellWrite.parseGrid("maps/"+ Map_name[i]+".txt");
             GridCellWrite.setPath(Map_name[i]);
@@ -236,6 +278,8 @@ public class PlayState extends GameState implements Observarable, EventManager.E
                 clear();
                 LoadDataFromEvent(Map_name[i]);
                 SaveStatusInPlaystate.getInstance().load(player, i);
+                GamePanel.playSE(8);
+                System.gc();
                 try {
                     Thread.sleep(200); // 200 milliseconds delay
                 } catch (InterruptedException e) {
@@ -248,6 +292,7 @@ public class PlayState extends GameState implements Observarable, EventManager.E
     public void clear(){
         despawnMonster(activeMonsters);
         despawnNPC(activeNPCs);
+        despawnItem(activeItems);
     }
 
     @Override
@@ -260,9 +305,13 @@ public class PlayState extends GameState implements Observarable, EventManager.E
         for (NPC npc : activeNPCs) {
             renderQueue.addToQueue(npc);
         }
+        for (Item item : activeItems) {
+            renderQueue.addToQueue(item);
+        }
         renderQueue.render(g);
         player.render(g);
         renderUI(g);
+
         drawTeleport(g);
     }
 
@@ -270,19 +319,6 @@ public class PlayState extends GameState implements Observarable, EventManager.E
         player.renderUI(g);
     }
 
-    public void monsterRender(Graphics2D g){
-        if(activeMonsters == null || activeMonsters.isEmpty()) return;
-        for(Monster monster : activeMonsters){
-            monster.render(g);
-        }
-    }
-
-    public void npcRender(Graphics2D g){
-        if(activeNPCs == null || activeNPCs.isEmpty()) return;
-        for(NPC npc : activeNPCs){
-            npc.render(g);
-        }
-    }
 
     public void drawTeleport(Graphics2D g){
         PlayState.map_teleport[index % 5].render(g);
@@ -310,7 +346,7 @@ public class PlayState extends GameState implements Observarable, EventManager.E
     public static void spawnMonster(Vector2D position){
         if(countdown_spawn == 0){
             countdown_spawn = 2;
-            monsterSpawner.spawnMonster(position);
+            monsterSpawner.spawnMonster(position, F_Type_Sprite_Entity.Type1);
             System.out.println("Spawn");
         }
     }
@@ -319,6 +355,7 @@ public class PlayState extends GameState implements Observarable, EventManager.E
         monsterSpawner.despawnMonster(monsters);
     }
     public static void despawnNPC(List<NPC> npcs){npcSpawner.despawnNPC(npcs);}
+    public static void despawnItem(List<Item> items){itemSpawner.despawnItem(items);}
 
     public static void addMonster(Monster monster){
         activeMonsters.add(monster);
@@ -337,6 +374,36 @@ public class PlayState extends GameState implements Observarable, EventManager.E
         while(iterator.hasNext()){
             NPC temp = iterator.next();
             if(temp.equals(npc)){
+                iterator.remove();
+            }
+        }
+    }
+
+    public static void addEventEnding(int index){
+        Event_Ending[index] = true;
+    }
+
+    public static boolean[] getEventEnding(){
+        return Event_Ending;
+    }
+
+    public static void setEventEnding(int index, boolean value){
+        Event_Ending[index] = value;
+    }
+
+    public static void resetEventEnding(){
+        Arrays.fill(Event_Ending, false);
+    }
+
+    public static void addItem(Item item){
+        activeItems.add(item);
+    }
+
+    public static void removeItem(Item item){
+        Iterator<Item> iterator = activeItems.iterator();
+        while(iterator.hasNext()){
+            Item temp = iterator.next();
+            if(temp.equals(item)){
                 iterator.remove();
             }
         }
@@ -387,6 +454,24 @@ public class PlayState extends GameState implements Observarable, EventManager.E
         }
     }
 
+
+    private void checkItemPickupCollision() {
+        Iterator<Item> itemIterator = activeItems.iterator();
+        while (itemIterator.hasNext()) {
+            Item item = itemIterator.next();
+
+            // Check collision between Player and Item
+            if (player.getHitbox().collides(item.getHitbox())) {
+                player.pickUpItem(item);
+
+                // Remove this item
+                itemIterator.remove();
+
+                System.out.println("Player picked up item: " + item.getType());
+            }
+        }
+    }
+
     @Override
     public void addObserver(Observer observer) {
         observers.add(observer);
@@ -412,10 +497,18 @@ public class PlayState extends GameState implements Observarable, EventManager.E
                 List<Monster> deadMonsters = new ArrayList<>();
                 for(Monster monster : activeMonsters){
                     if(monster.getHitbox().collides(attackBox)){
+                        if(monster.getImmortality())continue;
                         monster.takeDamage(player.getAttackDemage());
                         if(monster.getHp() <= 0){
-                           monster.deactivate();
-                            deadMonsters.add(monster);
+                            if(monster.getType() == F_Type_Sprite_Entity.Type3){
+                                GameStateManager.GameEnding = true;
+                                player.CantMove();
+                                GamePanel.playMusic(0);
+                            }else {
+                                System.out.println("Monster dead");
+                                monster.deactivate();
+                                deadMonsters.add(monster);
+                            }
                         }
                     }
                 }
@@ -425,6 +518,7 @@ public class PlayState extends GameState implements Observarable, EventManager.E
                 player.takeDamage((int) args[0]);
                 break;
             case "PlayerDead":
+                GamePanel.playMusic(2);
                 gsm.addState(Flag_GameState.GAMEOVER);
                 break;
             case "MonsterAttack":
@@ -432,6 +526,9 @@ public class PlayState extends GameState implements Observarable, EventManager.E
                 if(monsterBox.collides(player.getHitbox())){
                     player.takeDamage(1);
                 }
+                break;
+            case "LastWordOfBoss":
+                GameStateManager.setBufferState("LastWordOfBoss");
                 break;
             default:
                 break;

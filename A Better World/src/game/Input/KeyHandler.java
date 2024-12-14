@@ -77,6 +77,13 @@ public class KeyHandler implements KeyListener {
         }
     }
 
+    public boolean anyKeyPress() {
+        for (Key key : keys) {
+            if(key.down) return true;
+        }
+        return false;
+    }
+
     public void toggle(KeyEvent e, boolean pressed){
         // Toggle keys based on key events
         switch (e.getKeyCode()) {
@@ -84,7 +91,7 @@ public class KeyHandler implements KeyListener {
             case KeyEvent.VK_S -> down.toggle(pressed);
             case KeyEvent.VK_A -> left.toggle(pressed);
             case KeyEvent.VK_D -> right.toggle(pressed);
-            case KeyEvent.VK_E -> menu.toggle(pressed);
+            case KeyEvent.VK_M -> menu.toggle(pressed);
             case KeyEvent.VK_ENTER -> enter.toggle(pressed);
             case KeyEvent.VK_ESCAPE -> escape.toggle(pressed);
             case KeyEvent.VK_SHIFT -> dash.toggle(pressed);

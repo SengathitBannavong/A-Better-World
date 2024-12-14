@@ -1,5 +1,7 @@
 package game.entity;
 
+import game.Debug;
+import game.GamePanel;
 import game.enum_.F_Direction;
 import game.enum_.F_List_Animation_Sprite;
 import game.enum_.F_Statue_Animate;
@@ -242,11 +244,8 @@ public abstract class Entity extends BaseGameObject {
     public Vector2D getOrigin() {return origin;}
 
     public void setIsMoving(boolean isMoving) {this.isMoving = isMoving;}
+    public boolean getImmortality() {return immortality;}
 
-    public int getAttackDemage(){
-        //random damge between damage and maxDamage
-        return (int)(Math.random() * (maxDamage - damage + 1) + damage);
-    }
 
     public int getHp(){
         return hp;

@@ -11,11 +11,11 @@ import java.util.List;
 
 public class Event {
     private String tag;
-    private List<Vector2D> monsterSpawnPoints, npcSpawnPoints;
-    private List<F_Type_Sprite_Entity> monsterTypes, npcTypes;
+    private List<Vector2D> monsterSpawnPoints, npcSpawnPoints, itemSpawnPoints;
+    private List<F_Type_Sprite_Entity> monsterTypes, npcTypes, itemTypes;
     private List<Boolean> isCanTalk_NPC;
     private List<String> path_NPC;
-    private int capacityMonster, capacityNPC;
+    private int capacityMonster, capacityNPC, capacityItem;
     private boolean IsEnd = false;
 
     public Event(String tag) {
@@ -26,6 +26,8 @@ public class Event {
         this.npcTypes = new ArrayList<>();
         this.isCanTalk_NPC = new ArrayList<>();
         this.path_NPC = new ArrayList<>();
+        this.itemSpawnPoints = new ArrayList<>();
+        this.itemTypes = new ArrayList<>();
         LoadData();
     }
 
@@ -101,6 +103,16 @@ public class Event {
         return path_NPC;
     }
 
+    public int getCapacityItem() { return capacityItem; }
+
+    public void setCapacityItem(int capacityItem){ this.capacityItem = capacityItem; }
+
+    public List<Vector2D> getItemSpawnPoints() { return itemSpawnPoints; }
+
+    public List<F_Type_Sprite_Entity> getItemTypes() {
+        return itemTypes;
+    }
+
     private void LoadData(){
         // Load data from file
         System.out.print("Loading data from file " + tag);
@@ -119,8 +131,17 @@ public class Event {
             size = Integer.parseInt(data[0]);
             System.out.println(" sizeNpc: " + size);
             this.capacityNPC = size;
-            if(size != 0) {
+            if(size > 0) {
                 GetDataNPC(br, size, npcSpawnPoints, npcTypes,isCanTalk_NPC,path_NPC); // read NpcSpawnPoints
+            }
+
+            line = br.readLine();
+            data = line.split(" ");
+            size = Integer.parseInt(data[0]);
+            System.out.println(" sizeItem: " + size);
+            this.capacityItem = size;
+            if(size != 0){
+                GetData(br, size, itemSpawnPoints, itemTypes);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -152,7 +173,7 @@ public class Event {
         }
     }
 
-    private void GetData(BufferedReader br, int size, List<Vector2D> npcSpawnPoints, List<F_Type_Sprite_Entity> npcTypes) throws IOException {
+    private void GetData(BufferedReader br, int size, List<Vector2D> SpawnPoints, List<F_Type_Sprite_Entity> Types) throws IOException {
         String line;
         for(int i = 1; i <= size; i++){
             // get next line
@@ -162,8 +183,8 @@ public class Event {
             float y = Float.parseFloat(parts[1]);
             F_Type_Sprite_Entity type = F_Type_Sprite_Entity.valueOf(parts[2]);
             Vector2D temp = new Vector2D(x, y);
-            npcSpawnPoints.add(temp);
-            npcTypes.add(type);
+            SpawnPoints.add(temp);
+            Types.add(type);
         }
     }
 

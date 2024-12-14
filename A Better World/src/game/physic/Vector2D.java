@@ -109,4 +109,8 @@ public class Vector2D {
     public float dot(Vector2D v) {
         return x * v.x + y * v.y;
     }
+
+    public Vector2D copy() {
+        return new Vector2D(x, y);
+    }
 }

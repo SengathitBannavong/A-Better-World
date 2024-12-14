@@ -2,6 +2,7 @@ package game;
 
 import game.Input.KeyHandler;
 import game.Input.MouseHandler;
+import game.event.EventManager;
 import game.graphic.Sprite;
 import game.physic.Vector2D;
 import game.state.GameState;
@@ -14,7 +15,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
-public class GamePanel extends JPanel implements Runnable {
+public class GamePanel extends JPanel implements Runnable , EventManager.EventListener {
     // GamePanel
     public static int width;
     public static int height;
@@ -42,7 +43,8 @@ public class GamePanel extends JPanel implements Runnable {
     // GameStateManager
     private GameStateManager gameStateManager;
 
-    // TODO add sound and music to the game (Anh's code)
+    private static Sound sound = new Sound();
+    private static Sound background = new Sound();
 
     public GamePanel(int width, int height) {
         GamePanel.width = width;
@@ -52,6 +54,7 @@ public class GamePanel extends JPanel implements Runnable {
         setPreferredSize(new Dimension(width, height));
         setFocusable(true);
         requestFocus();
+        EventManager.addListener(this);
     }
 
     // Start the thread
@@ -61,6 +64,7 @@ public class GamePanel extends JPanel implements Runnable {
             thread = new Thread(this , "GameThread");
             thread.start();
         }
+        playMusic(10);
     }
 
     public void init() {
@@ -111,6 +115,7 @@ public class GamePanel extends JPanel implements Runnable {
         int tickcount = 0;
         double now;
         int updateCount, renderCount, thisSecond;
+        AnimationStory story = new AnimationStory();
         while (running) {
             // Wait for GameStateManager to be ready
             if (gameStateManager == null) {
@@ -118,13 +123,15 @@ public class GamePanel extends JPanel implements Runnable {
                 graphics2D.drawImage(Window.background.getImage(), 0, 0, width, height, null);
                 Vector2D vector2D = new Vector2D(((float) width / 2)+150, (float) height / 2);
                 Sprite.drawArray(graphics2D,Window.font ,"Loading...",vector2D, 32, 32, 32, 0);
+//                story.update();
+//                story.input(mouse, key);
+//                story.render(graphics2D);
                 draw();
                 lastSecondTime = (int) (lastUpdateTime / 1_000_000_000);
                 lastUpdateTime = System.nanoTime();
                 lastRenderTime = System.nanoTime();
                 continue; // Skip the loop until gameStateManager is ready
             }
-
             now = System.nanoTime();
             deltaUpdate += (now - lastUpdateTime) / TBU;
             deltaRender += (now - lastRenderTime) / TBR;
@@ -134,7 +141,7 @@ public class GamePanel extends JPanel implements Runnable {
             // Update the game
             while(deltaUpdate >= 1 && (updateCount < MUBU)) {
                 input(mouse, key);
-                if(!tick_state && key.escape.down){
+                if(!tick_state && key.escape.down  && Debug.admin){
                     tick_state = true;
                     Debug.debugging = !Debug.debugging;
                 }
@@ -192,7 +199,7 @@ public class GamePanel extends JPanel implements Runnable {
     public void render() {
         // Render the game
         if(graphics2D != null) {
-            graphics2D.setColor(new Color(109, 220, 239));
+            graphics2D.setColor(new Color(129, 62, 177, 100));
             graphics2D.fillRect(0, 0, width, height);
            gameStateManager.render(graphics2D);
         }
@@ -209,6 +216,40 @@ public class GamePanel extends JPanel implements Runnable {
         // Handle input
         if(gameStateManager != null) {
             gameStateManager.input(mouse, key);
+        }
+    }
+
+    public static void playMusic(int i) {
+        System.out.println("------------Playing music: " + i);
+        background.setFile(i);
+        background.play();
+        background.loop();
+    }
+
+    public static void stopMusic() {
+         background.stop();
+    }
+
+    public static void playSE(int i) {
+        sound.setFile(i);
+        sound.play();
+    }
+
+    public static void playerAttack() {
+        sound.setFile(5);
+        sound.play();
+    }
+
+    public Sound getSound() {
+        return sound;
+    }
+
+    @Override
+    public void onEvent(String eventName, Object... args) {
+        if(eventName.equals("ENDPROGRAM")) {
+            running = false;
+            System.out.println("++++++++++++++++++++++GamePanel stopping...++++++++++++++++++++++");
+            System.exit(0);
         }
     }
 }

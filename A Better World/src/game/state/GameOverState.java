@@ -39,6 +39,7 @@ public class GameOverState extends GameState {
 
         if(key.restart.down) {// Key r for restart
             PlayState.getInit(gsm).resetState();
+            GamePanel.playMusic(10);
             gsm.pop();
         }
     }

@@ -1,4 +1,11 @@
-1
+4
 1068 1512 Type1
-0
-0
+1542 1500 Type1
+1542 1755 Type1
+1414 1599 Type1
+1
+1635 1597 Type1 true first_villager
+3
+1935 1601 Type1
+2111 1601 Type2
+2389 1601 Type3

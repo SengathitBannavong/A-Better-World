@@ -6,5 +6,4 @@ public enum F_Type_Sprite_Entity {
     Type2,
     Type3,
     Type4,
-    Type5,
 }

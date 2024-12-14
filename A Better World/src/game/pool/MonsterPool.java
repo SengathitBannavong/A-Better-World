@@ -28,6 +28,9 @@ public class MonsterPool {
             F_Type_Sprite_Entity type = getTypeByI(i);
             for (int j = 0; j < maxMonsters; j++) {
                 queue.add(monsterFactory.createEntity(player, type));
+                if(type == F_Type_Sprite_Entity.Type3){
+                   break;
+                }
             }
             monsters.put(type, queue);
         }
@@ -66,7 +69,6 @@ public class MonsterPool {
             case 2 -> F_Type_Sprite_Entity.Type2;
             case 3 -> F_Type_Sprite_Entity.Type3;
             case 4 -> F_Type_Sprite_Entity.Type4;
-            case 5 -> F_Type_Sprite_Entity.Type5;
             default -> F_Type_Sprite_Entity.Type1;
         };
     }
